@@ -1,0 +1,217 @@
+{
+  "exportedAt": "2026-06-13T09:05:17.925Z",
+  "spreadsheet": [
+    {
+      "sheetName": "訪問履歴(生データ/編集不可)",
+      "lastRow": 24,
+      "lastColumn": 13,
+      "headers": [
+        "タイムスタンプ",
+        "日付",
+        "営業担当",
+        "営業先",
+        "営業先担当者",
+        "メールアドレス",
+        "営業内容",
+        "相談内容・要望など",
+        "位置情報",
+        "電話",
+        "FAX",
+        "住所",
+        "肩書き"
+      ]
+    },
+    {
+      "sheetName": "営業先マスター",
+      "lastRow": 996,
+      "lastColumn": 29,
+      "headers": [
+        "2026-06-12T15:00:00.000Z",
+        "種別",
+        "担当者",
+        "肩書き",
+        "電話",
+        "FAX",
+        "メールアドレス",
+        "住所",
+        "エリア",
+        "今年紹介件数",
+        "累計紹介件数",
+        "今年契約件数",
+        "累計契約件数",
+        "今年契約率",
+        "最終訪問日",
+        "経過日数",
+        "今年訪問回数",
+        "累計訪問回数",
+        "ランク",
+        "担当事業所",
+        "備考",
+        "木更津デイ契約人数",
+        "姉崎デイ契約人数",
+        "君津デイ契約人数",
+        "生介真舟契約人数",
+        "すまいるあくてぃぶ契約人数",
+        "GHおうち契約人数",
+        "訪看契約人数",
+        "ケアマネ・相談支援契約人数"
+      ]
+    },
+    {
+      "sheetName": "OCR確認済み営業活動",
+      "lastRow": 18,
+      "lastColumn": 13,
+      "headers": [
+        "タイムスタンプ",
+        "日付",
+        "営業担当",
+        "営業先",
+        "営業先担当者",
+        "メールアドレス",
+        "営業内容",
+        "相談内容・要望など",
+        "電話",
+        "FAX",
+        "住所",
+        "位置情報",
+        "肩書き"
+      ]
+    },
+    {
+      "sheetName": "訪問履歴(閲覧用/編集可)",
+      "lastRow": 24,
+      "lastColumn": 12,
+      "headers": [
+        "タイムスタンプ",
+        "日付",
+        "営業担当",
+        "営業先",
+        "営業先担当者",
+        "メールアドレス",
+        "営業内容",
+        "相談内容・要望など",
+        "位置情報",
+        "電話",
+        "FAX",
+        "住所"
+      ]
+    },
+    {
+      "sheetName": "名刺OCR確認待ち",
+      "lastRow": 19,
+      "lastColumn": 13,
+      "headers": [
+        "受付日時",
+        "営業担当",
+        "送信者メール",
+        "名刺画像URL",
+        "営業先",
+        "営業先担当者",
+        "肩書き",
+        "メールアドレス",
+        "電話",
+        "FAX",
+        "住所",
+        "確認フォームURL",
+        "確認状況"
+      ]
+    },
+    {
+      "sheetName": "名刺OCR依頼",
+      "lastRow": 14,
+      "lastColumn": 6,
+      "headers": [
+        "タイムスタンプ",
+        "日付",
+        "営業担当",
+        "送信者メールアドレス",
+        "名刺写真",
+        "簡単メモ"
+      ]
+    },
+    {
+      "sheetName": "紹介実績(生データ/編集不可)",
+      "lastRow": 4,
+      "lastColumn": 9,
+      "headers": [
+        "タイムスタンプ",
+        "紹介日",
+        "紹介経路",
+        "営業担当者",
+        "紹介元担当者",
+        "利用者名",
+        "担当事業所",
+        "結果",
+        "備考"
+      ]
+    },
+    {
+      "sheetName": "紹介実績(閲覧用/編集可)",
+      "lastRow": 4,
+      "lastColumn": 9,
+      "headers": [
+        "タイムスタンプ",
+        "紹介日",
+        "紹介経路",
+        "営業担当者",
+        "紹介元担当者",
+        "利用者名",
+        "担当事業所",
+        "結果",
+        "備考"
+      ]
+    }
+  ],
+  "forms": [
+    {
+      "formTitle": "名刺OCR依頼フォーム",
+      "formId": "1vyYYkQzKJoN_Ea7ZXwCki9VXSUCNFJqXMsEGNmlGVM0",
+      "editUrl": "https://docs.google.com/forms/d/1vyYYkQzKJoN_Ea7ZXwCki9VXSUCNFJqXMsEGNmlGVM0/edit",
+      "publishedUrl": "https://docs.google.com/forms/d/e/1FAIpQLScTu-GMM1a_kZEsKHlYS6N9q89S7dfYAJdVMNkXivq4mChhRg/viewform",
+      "items": [
+        {
+          "title": "日付",
+          "type": "DATE",
+          "id": 1179253053
+        },
+        {
+          "title": "営業担当",
+          "type": "TEXT",
+          "id": 1953059991
+        },
+        {
+          "title": "送信者メールアドレス",
+          "type": "TEXT",
+          "id": 1996197381
+        },
+        {
+          "title": "名刺写真",
+          "type": "FILE_UPLOAD",
+          "id": 1193711387
+        },
+        {
+          "title": "簡単メモ",
+          "type": "TEXT",
+          "id": 853816954
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "functionName": "ocrToWaitingSheet",
+      "eventType": "ON_FORM_SUBMIT",
+      "source": "SPREADSHEETS"
+    },
+    {
+      "functionName": "transferOcrConfirmedToVisitHistory",
+      "eventType": "ON_FORM_SUBMIT",
+      "source": "SPREADSHEETS"
+    },
+    {
+      "functionName": "onFormSubmit",
+      "eventType": "ON_FORM_SUBMIT",
+      "source": "SPREADSHEETS"
+    }
+  ]
+}

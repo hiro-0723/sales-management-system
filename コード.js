@@ -646,4 +646,204 @@ function updateSalesMasterFromSheetRow(sourceSheet, sourceRowNumber) {
   updateReferralFormChoices();
 }
 
+function exportAllSchemas() {
+  exportSpreadsheetSchema();
+  exportFormSchema();
+  exportTriggers();
+}
 
+function exportSpreadsheetSchema() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const result = ss.getSheets().map(sheet => {
+    const headers = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
+
+    return {
+      sheetName: sheet.getName(),
+      lastColumn: sheet.getLastColumn(),
+      headers: headers
+    };
+  });
+
+  Logger.log('=== Spreadsheet Schema ===');
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
+function exportFormSchema() {
+  const formUrls = [
+    'https://docs.google.com/forms/d/e/1FAIpQLSfpXrKpPIOj_uI99MT62qm44d-8ysu3VODxDH9WoMAaQy9Vvg/viewform?usp=header',
+    'https://docs.google.com/forms/d/e/1FAIpQLSfCRaA8jzPu9WYdmb2nGhjI-_SL7AGFoMiyvzC1Qq3OWpBTbw/viewform?usp=header',
+    'https://docs.google.com/forms/d/e/1FAIpQLSdNnG1NM5fmDOMOR-1utWVZp9b5SS9g6F6hjhUanRnLnWcqhA/viewform?usp=header',
+    'https://docs.google.com/forms/d/e/1FAIpQLScTu-GMM1a_kZEsKHlYS6N9q89S7dfYAJdVMNkXivq4mChhRg/viewform?usp=header'
+  ];
+
+  const result = formUrls.map(url => {
+    const form = FormApp.openByUrl(url);
+
+    return {
+      formTitle: form.getTitle(),
+      formUrl: url,
+      items: form.getItems().map(item => ({
+        title: item.getTitle(),
+        type: item.getType().toString(),
+        required: item.isRequired ? item.isRequired() : false
+      }))
+    };
+  });
+
+  Logger.log('=== Form Schema ===');
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
+function exportTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+
+  const result = triggers.map(t => ({
+    functionName: t.getHandlerFunction(),
+    eventType: t.getEventType().toString(),
+    source: t.getTriggerSource().toString()
+  }));
+
+  Logger.log('=== Trigger Schema ===');
+  Logger.log(JSON.stringify(result, null, 2));
+}
+
+function exportAllSchemasToDrive() {
+  const schema = {
+    exportedAt: new Date(),
+    spreadsheet: exportSpreadsheetSchemaData(),
+    forms: exportFormSchemaData(),
+    triggers: exportTriggerSchemaData()
+  };
+
+  const json = JSON.stringify(schema, null, 2);
+  const fileName = 'sales-management-system-schema.json';
+
+  const files = DriveApp.getFilesByName(fileName);
+
+  if (files.hasNext()) {
+    const file = files.next();
+    file.setContent(json);
+    Logger.log('更新しました: ' + file.getUrl());
+  } else {
+    const file = DriveApp.createFile(fileName, json, MimeType.PLAIN_TEXT);
+    Logger.log('作成しました: ' + file.getUrl());
+  }
+}
+
+function exportSpreadsheetSchemaData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  return ss.getSheets().map(sheet => {
+    const lastColumn = sheet.getLastColumn();
+
+    const headers = lastColumn > 0
+      ? sheet.getRange(1, 1, 1, lastColumn).getValues()[0]
+      : [];
+
+    return {
+      sheetName: sheet.getName(),
+      lastRow: sheet.getLastRow(),
+      lastColumn: lastColumn,
+      headers: headers
+    };
+  });
+}
+
+function exportFormSchemaData() {
+  const targetTitles = [
+    '紹介実績入力フォーム',
+    'OCR確認済み営業活動報告フォーム',
+    '営業活動報告フォーム',
+    '名刺OCR依頼フォーム'
+  ];
+
+  const result = [];
+  const files = DriveApp.getFilesByType(MimeType.GOOGLE_FORMS);
+
+  while (files.hasNext()) {
+    const file = files.next();
+    const form = FormApp.openById(file.getId());
+    const title = form.getTitle();
+
+    if (!targetTitles.includes(title)) continue;
+
+    result.push({
+      formTitle: title,
+      formId: file.getId(),
+      editUrl: form.getEditUrl(),
+      publishedUrl: form.getPublishedUrl(),
+      items: form.getItems().map(item => ({
+        title: item.getTitle(),
+        type: item.getType().toString(),
+        id: item.getId()
+      }))
+    });
+  }
+
+  return result;
+}
+
+function exportTriggerSchemaData() {
+  return ScriptApp.getProjectTriggers().map(trigger => ({
+    functionName: trigger.getHandlerFunction(),
+    eventType: trigger.getEventType().toString(),
+    source: trigger.getTriggerSource().toString()
+  }));
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('営業管理メニュー')
+    .addItem('営業先整理＋フォーム候補を再作成', 'maintenanceSalesMasterAndForm')
+    .addToUi();
+}
+
+function maintenanceSalesMasterAndForm() {
+  cleanupSalesMaster();
+  updateReferralFormChoices();
+
+  SpreadsheetApp.getUi().alert('営業先マスター整理とフォーム候補の再作成が完了しました。');
+}
+
+function cleanupSalesMaster() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const masterSheet = ss.getSheetByName('営業先マスター');
+  const visitSheet = ss.getSheetByName('訪問履歴(生データ/編集不可)');
+  const referralSheet = ss.getSheetByName('紹介実績');
+
+  if (!masterSheet) throw new Error('営業先マスター シートが見つかりません');
+  if (!visitSheet) throw new Error('訪問履歴(生データ/編集不可) シートが見つかりません');
+  if (!referralSheet) throw new Error('紹介実績 シートが見つかりません');
+
+  const visitNames = getColumnValues_(visitSheet, 4);       // D列：営業先
+  const referralNames = getColumnValues_(referralSheet, 3); // C列：紹介経路
+
+  const usedNames = new Set([...visitNames, ...referralNames]);
+
+  const lastRow = masterSheet.getLastRow();
+
+  for (let row = lastRow; row >= 2; row--) {
+    const name = String(masterSheet.getRange(row, 1).getValue()).trim();
+
+    if (name && !usedNames.has(name)) {
+      masterSheet.deleteRow(row);
+    }
+  }
+}
+
+function getColumnValues_(sheet, col) {
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return [];
+
+  return sheet
+    .getRange(2, col, lastRow - 1, 1)
+    .getValues()
+    .flat()
+    .map(v => String(v).trim())
+    .filter(v => v !== '');
+}

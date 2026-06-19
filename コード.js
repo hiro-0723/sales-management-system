@@ -813,26 +813,58 @@ function cleanupSalesMaster() {
 
   const masterSheet = ss.getSheetByName('営業先マスター');
   const visitSheet = ss.getSheetByName('訪問履歴(生データ/編集不可)');
-  const referralSheet = ss.getSheetByName('紹介実績');
+  const referralSheet =
+    ss.getSheetByName('紹介実績(生データ/編集不可)') ||
+    ss.getSheetByName('紹介実績(閲覧用/編集可)') ||
+    ss.getSheetByName('紹介実績');
 
   if (!masterSheet) throw new Error('営業先マスター シートが見つかりません');
   if (!visitSheet) throw new Error('訪問履歴(生データ/編集不可) シートが見つかりません');
-  if (!referralSheet) throw new Error('紹介実績 シートが見つかりません');
+  if (!referralSheet) throw new Error('紹介実績系シートが見つかりません');
 
-  const visitNames = getColumnValues_(visitSheet, 4);       // D列：営業先
-  const referralNames = getColumnValues_(referralSheet, 3); // C列：紹介経路
+  const normalizeName = (name) => {
+    return String(name)
+      .normalize('NFKC')
+      .replace(/[ \u00A0\u1680\u180E\u2000-\u200D\u202F\u205F\u3000\uFEFF]/g, '')
+      .trim();
+  };
 
+  const visitNames = getColumnValues_(visitSheet, 4).map(normalizeName);
+  const referralNames = getColumnValues_(referralSheet, 3).map(normalizeName);
   const usedNames = new Set([...visitNames, ...referralNames]);
 
   const lastRow = masterSheet.getLastRow();
+  const seenMasterNames = new Set();
+  const rowsToDelete = [];
 
-  for (let row = lastRow; row >= 2; row--) {
-    const name = String(masterSheet.getRange(row, 1).getValue()).trim();
+  for (let row = 2; row <= lastRow; row++) {
+    const rawName = masterSheet.getRange(row, 1).getValue();
+    const normalizedName = normalizeName(rawName);
 
-    if (name && !usedNames.has(name)) {
-      masterSheet.deleteRow(row);
+    if (!normalizedName) continue;
+
+    Logger.log(row + '行目: [' + rawName + '] → [' + normalizedName + ']');
+
+    if (!usedNames.has(normalizedName)) {
+      rowsToDelete.push(row);
+      continue;
     }
+
+    if (seenMasterNames.has(normalizedName)) {
+      rowsToDelete.push(row);
+      continue;
+    }
+
+    seenMasterNames.add(normalizedName);
   }
+
+  rowsToDelete.reverse().forEach(row => {
+    masterSheet.deleteRow(row);
+  });
+
+  Logger.log('削除行: ' + JSON.stringify(rowsToDelete));
+
+  updateReferralFormChoices();
 }
 
 function getColumnValues_(sheet, col) {

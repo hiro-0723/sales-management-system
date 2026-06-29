@@ -623,25 +623,23 @@ function updateSalesMasterFromSheetRow(sourceSheet, sourceRowNumber) {
     });
   }
 
-  const setIfBlankByHeader = (headerName, value) => {
-    if (!value) return;
+  const setValueByHeader = (headerName, value) => {
 
-    const col = getMasterCol(headerName);
-    if (!col) return;
+  const col = getMasterCol(headerName);
+  if (!col) return;
 
-    const currentValue = String(masterSheet.getRange(targetRow, col).getValue()).trim();
+  masterSheet
+    .getRange(targetRow, col)
+    .setValue(value);
 
-    if (!currentValue) {
-      masterSheet.getRange(targetRow, col).setValue(value);
-    }
-  };
+};
 
-  setIfBlankByHeader('担当者', contactName);
-  setIfBlankByHeader('肩書き', title);
-  setIfBlankByHeader('電話', phone);
-  setIfBlankByHeader('FAX', fax);
-  setIfBlankByHeader('メールアドレス', email);
-  setIfBlankByHeader('住所', address);
+  setValueByHeader('担当者', contactName);
+setValueByHeader('肩書き', title);
+setValueByHeader('電話', phone);
+setValueByHeader('FAX', fax);
+setValueByHeader('メールアドレス', email);
+setValueByHeader('住所', address);
 
   updateReferralFormChoices();
 }
@@ -795,10 +793,25 @@ function exportTriggerSchemaData() {
 }
 
 function onOpen() {
+
   SpreadsheetApp.getUi()
-    .createMenu('営業管理メニュー')
-    .addItem('営業先整理＋フォーム候補を再作成', 'maintenanceSalesMasterAndForm')
+
+    .createMenu("営業管理メニュー")
+
+    .addItem(
+      "営業先整理＋フォーム候補を再作成",
+      "maintenanceSalesMasterAndForm"
+    )
+
+    .addSeparator()
+
+    .addItem(
+      "システム構成を書き出す",
+      "exportFullSystemSchema"
+    )
+
     .addToUi();
+
 }
 
 function maintenanceSalesMasterAndForm() {
@@ -878,4 +891,189 @@ function getColumnValues_(sheet, col) {
     .flat()
     .map(v => String(v).trim())
     .filter(v => v !== '');
+}
+
+function exportFullSystemSchema() {
+
+  const schema = {
+    exportedAt: new Date(),
+
+    spreadsheet: exportSpreadsheetSchema_(),
+
+    forms: exportFormsSchema_(),
+
+    triggers: exportTriggerSchema_()
+  };
+
+  const json = JSON.stringify(schema, null, 2);
+
+  const fileName = "sales-management-system-full-schema.json";
+
+  const files = DriveApp.getFilesByName(fileName);
+
+  if (files.hasNext()) {
+
+    files.next().setContent(json);
+
+  } else {
+
+    DriveApp.createFile(fileName, json, MimeType.PLAIN_TEXT);
+
+  }
+
+  SpreadsheetApp.getUi().alert("フルスキーマを書き出しました。");
+}
+
+
+
+function exportSpreadsheetSchema_(){
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  return ss.getSheets().map(sheet=>{
+
+    const lastRow=sheet.getLastRow();
+    const lastCol=sheet.getLastColumn();
+
+    const headers=
+      lastCol>0
+      ?sheet.getRange(1,1,1,lastCol).getValues()[0]
+      :[];
+
+    return{
+
+      sheetName:sheet.getName(),
+
+      rows:lastRow,
+
+      columns:lastCol,
+
+      frozenRows:sheet.getFrozenRows(),
+
+      frozenColumns:sheet.getFrozenColumns(),
+
+      headers:headers
+
+    };
+
+  });
+
+}
+
+
+
+function exportFormsSchema_(){
+
+  const result=[];
+
+  const files=DriveApp.getFilesByType(MimeType.GOOGLE_FORMS);
+
+  while(files.hasNext()){
+
+    const file=files.next();
+
+    const form=FormApp.openById(file.getId());
+
+    const items=form.getItems().map(item=>{
+
+      const obj={
+
+        id:item.getId(),
+
+        title:item.getTitle(),
+
+        type:item.getType().toString()
+
+      };
+
+      try{
+
+        if(item.getType()==FormApp.ItemType.LIST){
+
+          obj.choices=item.asListItem()
+            .getChoices()
+            .map(c=>c.getValue());
+
+        }
+
+        if(item.getType()==FormApp.ItemType.MULTIPLE_CHOICE){
+
+          obj.choices=item.asMultipleChoiceItem()
+            .getChoices()
+            .map(c=>c.getValue());
+
+        }
+
+      }catch(err){}
+
+      return obj;
+
+    });
+
+    result.push({
+
+      title:form.getTitle(),
+
+      id:file.getId(),
+
+      editUrl:form.getEditUrl(),
+
+      publishedUrl:form.getPublishedUrl(),
+
+      items:items
+
+    });
+
+  }
+
+  return result;
+
+}
+
+
+
+function exportTriggerSchema_(){
+
+  return ScriptApp.getProjectTriggers().map(t=>({
+
+    function:t.getHandlerFunction(),
+
+    eventType:t.getEventType().toString(),
+
+    source:t.getTriggerSource().toString()
+
+  }));
+
+}
+
+function onEdit(e) {
+  if (!e || !e.range || !e.source) return;
+
+  const sheet = e.range.getSheet();
+  const sheetName = sheet.getName();
+
+  // 訪問履歴の生データシート以外では何もしない
+  if (sheetName !== '訪問履歴(生データ/編集不可)') return;
+
+  const editedRow = e.range.getRow();
+  const editedCol = e.range.getColumn();
+
+  // 見出し行は無視
+  if (editedRow < 2) return;
+
+  // 反映対象列だけに限定
+  // D:営業先, E:営業先担当者, F:メール, J:電話, K:FAX, L:住所, M:肩書き
+  const targetCols = [4, 5, 6, 10, 11, 12, 13];
+
+  if (!targetCols.includes(editedCol)) return;
+
+  updateSalesMasterFromSheetRow(sheet, editedRow);
+
+  updateReferralFormChoices();
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '営業先マスターへ反映しました',
+    '営業管理システム',
+    3
+  );
 }

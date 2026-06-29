@@ -1070,7 +1070,52 @@ function onEdit(e) {
 }
 
 function rebuildSalesMaster() {
-  Logger.log("営業先マスター再構築開始");
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const visitSheet = ss.getSheetByName('訪問履歴(生データ/編集不可)');
+
+  if (!visitSheet) {
+    SpreadsheetApp.getUi().alert('訪問履歴シートが見つかりません。');
+    return;
+  }
+
+  const lastRow = visitSheet.getLastRow();
+
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('訪問履歴がありません。');
+    return;
+  }
+
+  // D列（営業先）
+  const companies = visitSheet
+    .getRange(2, 4, lastRow - 1, 1)
+    .getValues()
+    .flat()
+    .map(v => String(v).trim())
+    .filter(v => v !== '');
+
+  const uniqueCompanies = [...new Set(companies)];
+
+const salesMasterData = uniqueCompanies.map(company => {
+  return {
+    company: company
+  };
+});
+
+Logger.log(JSON.stringify(salesMasterData, null, 2));
+
+  const message =
+  '営業先マスター再構築（診断モード）\n\n' +
+  '訪問履歴件数：' + companies.length + '\n' +
+  'ユニーク営業先数：' + uniqueCompanies.length + '\n' +
+  '営業先オブジェクト生成：OK\n\n' +
+  'まだ営業先マスターは変更していません。';
+
+  SpreadsheetApp.getUi().alert(message);
+
+  Logger.log(message);
+
 }
 
 function systemHealthCheck() {

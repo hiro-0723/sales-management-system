@@ -793,25 +793,13 @@ function exportTriggerSchemaData() {
 }
 
 function onOpen() {
-
   SpreadsheetApp.getUi()
-
-    .createMenu("営業管理メニュー")
-
-    .addItem(
-      "営業先整理＋フォーム候補を再作成",
-      "maintenanceSalesMasterAndForm"
-    )
-
+    .createMenu('営業管理メニュー')
+    .addItem('営業先整理＋フォーム候補を再作成', 'maintenanceSalesMasterAndForm')
+    .addItem('営業先マスター再構築', 'rebuildSalesMaster')
     .addSeparator()
-
-    .addItem(
-      "システム構成を書き出す",
-      "exportFullSystemSchema"
-    )
-
+    .addItem('システム構成を書き出す', 'exportAllSchemasToDrive')
     .addToUi();
-
 }
 
 function maintenanceSalesMasterAndForm() {
@@ -1076,4 +1064,8 @@ function onEdit(e) {
     '営業管理システム',
     3
   );
+}
+
+function rebuildSalesMaster() {
+  Logger.log("営業先マスター再構築開始");
 }

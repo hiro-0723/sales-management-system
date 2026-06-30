@@ -805,11 +805,7 @@ function onOpen() {
 
 function maintenanceSalesMasterAndForm() {
   cleanupSalesMaster();
-  updateReferralFormChoices();
-
-  SpreadsheetApp.getUi().alert(
-    '営業先データを整理しました。\n営業先マスターと紹介実績フォームは最新の状態に同期されています。'
-  );
+  rebuildSalesMaster();
 }
 
 function cleanupSalesMaster() {
@@ -1070,52 +1066,158 @@ function onEdit(e) {
 }
 
 function rebuildSalesMaster() {
-
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  const masterSheet = ss.getSheetByName('営業先マスター');
   const visitSheet = ss.getSheetByName('訪問履歴(生データ/編集不可)');
+
+  if (!masterSheet) {
+    SpreadsheetApp.getUi().alert('営業先マスター シートが見つかりません。');
+    return;
+  }
 
   if (!visitSheet) {
     SpreadsheetApp.getUi().alert('訪問履歴シートが見つかりません。');
     return;
   }
 
-  const lastRow = visitSheet.getLastRow();
+  const normalizeName = (name) => {
+    return String(name)
+      .normalize('NFKC')
+      .replace(/[ \u00A0\u1680\u180E\u2000-\u200D\u202F\u205F\u3000\uFEFF]/g, '')
+      .trim();
+  };
 
-  if (lastRow < 2) {
+  const visitLastRow = visitSheet.getLastRow();
+  if (visitLastRow < 2) {
     SpreadsheetApp.getUi().alert('訪問履歴がありません。');
     return;
   }
 
-  // D列（営業先）
-  const companies = visitSheet
-    .getRange(2, 4, lastRow - 1, 1)
-    .getValues()
-    .flat()
-    .map(v => String(v).trim())
-    .filter(v => v !== '');
+  const visitHeaders = visitSheet
+    .getRange(1, 1, 1, visitSheet.getLastColumn())
+    .getValues()[0];
 
-  const uniqueCompanies = [...new Set(companies)];
+  const masterHeaders = masterSheet
+    .getRange(1, 1, 1, masterSheet.getLastColumn())
+    .getValues()[0];
 
-const salesMasterData = uniqueCompanies.map(company => {
-  return {
-    company: company
+  const getIndex = (headers, headerName) => headers.indexOf(headerName);
+
+  const visitValues = visitSheet
+    .getRange(2, 1, visitLastRow - 1, visitSheet.getLastColumn())
+    .getValues();
+
+  const latestByCompany = {};
+
+  visitValues.forEach(row => {
+    const company = String(row[getIndex(visitHeaders, '営業先')] || '').trim();
+    if (!company) return;
+
+    const key = normalizeName(company);
+
+    latestByCompany[key] = {
+      company: company,
+      person: String(row[getIndex(visitHeaders, '営業先担当者')] || '').trim(),
+      title: String(row[getIndex(visitHeaders, '肩書き')] || '').trim(),
+      phone: String(row[getIndex(visitHeaders, '電話')] || '').trim(),
+      fax: String(row[getIndex(visitHeaders, 'FAX')] || '').trim(),
+      email: String(row[getIndex(visitHeaders, 'メールアドレス')] || '').trim(),
+      address: String(row[getIndex(visitHeaders, '住所')] || '').trim()
+    };
+  });
+
+  const masterLastRow = masterSheet.getLastRow();
+  const masterNames = masterLastRow >= 2
+    ? masterSheet.getRange(2, 1, masterLastRow - 1, 1).getValues().flat()
+    : [];
+
+  const masterRowByKey = {};
+
+  masterNames.forEach((name, i) => {
+    const key = normalizeName(name);
+    if (key && !masterRowByKey[key]) {
+      masterRowByKey[key] = i + 2;
+    }
+  });
+
+  const getMasterCol = (headerName) => {
+    const index = masterHeaders.indexOf(headerName);
+    return index === -1 ? null : index + 1;
   };
-});
 
-Logger.log(JSON.stringify(salesMasterData, null, 2));
+  const setByHeader = (row, headerName, value) => {
+  const col = getMasterCol(headerName);
+  if (!col) return;
+
+  const range = masterSheet.getRange(row, col);
+
+  // 電話・FAX・メール・住所は、数値ではなく文字列として扱う
+  // 特に電話/FAXは先頭の0が消えないようにする
+  if (
+    headerName === '電話' ||
+    headerName === 'FAX' ||
+    headerName === 'メールアドレス' ||
+    headerName === '住所'
+  ) {
+    range.setNumberFormat('@');
+  }
+
+  range.setValue(value);
+};
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  Object.keys(latestByCompany).forEach(key => {
+    const data = latestByCompany[key];
+
+    let targetRow = masterRowByKey[key];
+
+    if (!targetRow) {
+      targetRow = masterSheet.getLastRow() + 1;
+
+      masterSheet.getRange(targetRow, 1).setValue(data.company);
+
+      if (targetRow > 2) {
+        masterSheet
+          .getRange(2, 2, 1, masterSheet.getLastColumn() - 1)
+          .copyTo(
+            masterSheet.getRange(targetRow, 2, 1, masterSheet.getLastColumn() - 1),
+            { contentsOnly: false }
+          );
+      }
+
+      masterRowByKey[key] = targetRow;
+      addedCount++;
+    } else {
+      updatedCount++;
+    }
+
+    // A列の営業先名とB列以降の管理・集計列は原則保持。
+    // C〜H相当の基本情報のみ、訪問履歴の最新情報で同期する。
+    setByHeader(targetRow, '担当者', data.person);
+    setByHeader(targetRow, '肩書き', data.title);
+    setByHeader(targetRow, '電話', data.phone);
+    setByHeader(targetRow, 'FAX', data.fax);
+    setByHeader(targetRow, 'メールアドレス', data.email);
+    setByHeader(targetRow, '住所', data.address);
+  });
+
+  updateReferralFormChoices();
 
   const message =
-  '営業先マスター再構築（診断モード）\n\n' +
-  '訪問履歴件数：' + companies.length + '\n' +
-  'ユニーク営業先数：' + uniqueCompanies.length + '\n' +
-  '営業先オブジェクト生成：OK\n\n' +
-  'まだ営業先マスターは変更していません。';
+    '営業先データを整理しました。\n\n' +
+    '訪問履歴件数：' + visitValues.length + '\n' +
+    '営業先数：' + Object.keys(latestByCompany).length + '\n' +
+    '新規追加：' + addedCount + '件\n' +
+    '基本情報更新：' + updatedCount + '件\n\n' +
+    '担当者・肩書き・電話・FAX・メールアドレス・住所を最新化しました。\n' +
+    '種別・ランク・集計列などの管理情報は保持しています。\n\n' +
+    '紹介実績フォームの候補も同期しました。';
 
   SpreadsheetApp.getUi().alert(message);
-
   Logger.log(message);
-
 }
 
 function systemHealthCheck() {

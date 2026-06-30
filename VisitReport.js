@@ -152,3 +152,96 @@ function updateSalesPlanReportUrls() {
   Logger.log('⑫完了');
 }
 
+
+function onVisitReportSubmit(e) {
+  if (!e || !e.range) return;
+
+  const sheet = e.range.getSheet();
+
+  if (!isVisitReportResponseSheet_(sheet)) return;
+
+  const rowNumber = e.range.getRow();
+
+  updateSalesPlanFromVisitReportRow_(sheet, rowNumber);
+}
+
+function isVisitReportResponseSheet_(sheet) {
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(String);
+
+  return (
+    headers.includes('PlanID') &&
+    headers.includes('営業担当') &&
+    headers.includes('営業先') &&
+    headers.includes('営業内容')
+  );
+}
+
+function updateSalesPlanFromVisitReportRow_(sourceSheet, rowNumber) {
+  const headers = sourceSheet
+    .getRange(1, 1, 1, sourceSheet.getLastColumn())
+    .getValues()[0];
+
+  const row = sourceSheet
+    .getRange(rowNumber, 1, 1, sourceSheet.getLastColumn())
+    .getValues()[0];
+
+  const get = (headerName) => {
+    const index = headers.indexOf(headerName);
+    if (index === -1) return '';
+    return String(row[index]).trim();
+  };
+
+  const planId = get('PlanID');
+
+  if (!planId) return;
+
+  updateSalesPlanStatus(planId, '完了');
+
+  // 訪問履歴IDは、まずは営業活動報告フォーム回答シートの行番号を入れる
+  // 将来、訪問履歴(生データ/編集不可)側のIDと連携する場合はここを拡張する
+  linkVisitHistory(planId, sourceSheet.getName() + ':' + rowNumber);
+}
+
+function setupVisitReportSubmitTrigger() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'onVisitReportSubmit') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger('onVisitReportSubmit')
+    .forSpreadsheet(ss)
+    .onFormSubmit()
+    .create();
+
+  SpreadsheetApp.getUi().alert('営業活動報告フォーム送信トリガーを作成しました。');
+}
+
+function testUpdateSalesPlanFromLatestVisitReport() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sourceSheet = ss.getSheets()
+    .filter(sheet => isVisitReportResponseSheet_(sheet))
+    .sort((a, b) => b.getLastRow() - a.getLastRow())[0];
+
+  if (!sourceSheet) {
+    SpreadsheetApp.getUi().alert('営業活動報告フォームの回答シートが見つかりません。');
+    return;
+  }
+
+  const lastRow = sourceSheet.getLastRow();
+
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('営業活動報告フォームの回答がありません。');
+    return;
+  }
+
+  updateSalesPlanFromVisitReportRow_(sourceSheet, lastRow);
+
+  SpreadsheetApp.getUi().alert('最新の営業活動報告から営業予定を更新しました。');
+}

@@ -73,6 +73,8 @@ function expandSalesPlanRow(sourceSheet, rowNumber) {
       0
     ]);
   }
+
+  updateSalesPlanReportUrls();
 }
 
 function isDuplicateSalesPlan(planId) {

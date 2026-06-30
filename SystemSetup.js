@@ -1,4 +1,5 @@
 function setupSystem() {
+  registerVisitReportForm_();
   ensureSalesPlanSheet_();
   ensureSalesPlanForm_();
   ensureSalesPlanSubmitTrigger_();
@@ -50,4 +51,12 @@ function ensureSalesPlanSubmitTrigger_() {
     .forSpreadsheet(ss)
     .onFormSubmit()
     .create();
+}
+
+
+function registerVisitReportForm_() {
+  PropertiesService.getScriptProperties().setProperty(
+    'VISIT_REPORT_FORM_ID',
+    '19kiXsP0cFy9TAJMAxgge5_jOnP-juZ7gSmGTAeZ5tHs'
+  );
 }

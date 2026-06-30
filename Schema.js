@@ -292,3 +292,49 @@ function exportTriggerSchema_(){
   }));
 
 }
+
+function findSalesActivityForms() {
+  const files = DriveApp.getFilesByType(MimeType.GOOGLE_FORMS);
+
+  const results = [];
+
+  while (files.hasNext()) {
+    const file = files.next();
+    const form = FormApp.openById(file.getId());
+    const title = form.getTitle();
+
+    if (
+      title.includes('営業活動') ||
+      title.includes('訪問') ||
+      title.includes('OCR確認済み')
+    ) {
+      results.push({
+        title: title,
+        id: file.getId(),
+        editUrl: form.getEditUrl(),
+        publishedUrl: form.getPublishedUrl(),
+        itemTitles: form.getItems().map(item => item.getTitle())
+      });
+    }
+  }
+
+  Logger.log(JSON.stringify(results, null, 2));
+}
+
+function registerExistingVisitReportForm() {
+  const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSdNnG1NM5fmDOMOR-1utWVZp9b5SS9g6F6hjhUanRnLnWcqhA/viewform?usp=header';
+
+  const form = FormApp.openByUrl(formUrl);
+
+  PropertiesService.getScriptProperties()
+    .setProperty('VISIT_REPORT_FORM_ID', form.getId());
+
+  Logger.log('営業活動報告フォームを登録しました');
+  Logger.log('フォームID: ' + form.getId());
+  Logger.log('編集URL: ' + form.getEditUrl());
+  Logger.log('公開URL: ' + form.getPublishedUrl());
+
+  form.getItems().forEach(item => {
+    Logger.log(item.getTitle() + ' / ' + item.getType());
+  });
+}

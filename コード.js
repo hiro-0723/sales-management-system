@@ -797,6 +797,8 @@ function onOpen() {
     .createMenu('営業管理メニュー')
     .addItem('営業先データを整理する', 'maintenanceSalesMasterAndForm')
     .addItem('営業先マスター再構築', 'rebuildSalesMaster')
+    .addItem('営業予定シートを作成する', 'setupSalesPlanSheet')
+    .addItem('営業予定フォームを作成する', 'setupSalesPlanForm')
     .addSeparator()
     .addItem('システム診断', 'systemHealthCheck')
     .addItem('システム構成を書き出す', 'exportAllSchemasToDrive')
@@ -1291,4 +1293,121 @@ function systemHealthCheck() {
 
   SpreadsheetApp.getUi().alert(message);
   Logger.log(message);
+}
+
+function setupSalesPlanSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheetName = '営業予定';
+  let sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  }
+
+  const headers = [
+    'タイムスタンプ',
+    '日付',
+    '営業担当',
+    '予定時間',
+    '営業先',
+    '目的',
+    '優先度',
+    '状態',
+    'メモ'
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, headers.length);
+
+  sheet.getRange('A:A').setNumberFormat('yyyy/mm/dd hh:mm:ss');
+  sheet.getRange('B:B').setNumberFormat('yyyy/mm/dd');
+  sheet.getRange('D:D').setNumberFormat('hh:mm');
+
+  SpreadsheetApp.getUi().alert('営業予定シートを作成・整備しました。');
+}
+
+function setupSalesPlanForm() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheetName = '営業予定';
+  let sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  }
+
+  const headers = [
+    'タイムスタンプ',
+    '日付',
+    '営業担当',
+    '営業先',
+    '目的',
+    'メモ'
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.setFrozenRows(1);
+
+  const form = FormApp.create('営業予定入力フォーム');
+
+  form.addDateItem()
+    .setTitle('日付')
+    .setRequired(true);
+
+  form.addListItem()
+    .setTitle('営業担当')
+    .setChoiceValues(['高橋'])
+    .setRequired(true);
+
+  form.addListItem()
+    .setTitle('営業先')
+    .setChoiceValues(getSalesMasterNames_())
+    .setRequired(true);
+
+  form.addListItem()
+    .setTitle('目的')
+    .setChoiceValues([
+      '新規営業',
+      '定期訪問',
+      '情報収集',
+      '契約・担当者会議',
+      '空き状況案内',
+      'あいさつ',
+      'その他'
+    ])
+    .setRequired(true);
+
+  form.addParagraphTextItem()
+    .setTitle('メモ')
+    .setRequired(false);
+
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+
+  SpreadsheetApp.getUi().alert(
+    '営業予定入力フォームを作成しました。\n\n' +
+    'フォームURL:\n' + form.getPublishedUrl()
+  );
+
+  Logger.log('営業予定入力フォーム 編集URL: ' + form.getEditUrl());
+  Logger.log('営業予定入力フォーム 公開URL: ' + form.getPublishedUrl());
+}
+
+function getSalesMasterNames_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const masterSheet = ss.getSheetByName('営業先マスター');
+
+  if (!masterSheet) return ['営業先マスター未設定'];
+
+  const lastRow = masterSheet.getLastRow();
+  if (lastRow < 2) return ['営業先未登録'];
+
+  return masterSheet
+    .getRange(2, 1, lastRow - 1, 1)
+    .getValues()
+    .flat()
+    .map(v => String(v).trim())
+    .filter(v => v !== '');
 }

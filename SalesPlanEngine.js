@@ -4,20 +4,37 @@
  * 営業予定フォーム回答 → 営業予定シート展開エンジン
  *************************************************/
 
+
 function onSalesPlanSubmit(e) {
 
   if (!e || !e.range) return;
 
   const sheet = e.range.getSheet();
 
-  // フォーム回答シートのみ対象
-  if (sheet.getName() !== '営業予定入力フォーム の回答') return;
+  if (!isSalesPlanResponseSheet_(sheet)) return;
 
   const row = e.range.getRow();
 
   expandSalesPlanRow(sheet, row);
 
 }
+
+function isSalesPlanResponseSheet_(sheet) {
+
+  const headers = sheet
+    .getRange(1, 1, 1, sheet.getLastColumn())
+    .getValues()[0]
+    .map(String);
+
+  return (
+    headers.includes('日付') &&
+    headers.includes('営業担当') &&
+    headers.includes('予定1 営業先') &&
+    headers.includes('予定1 予定時間')
+  );
+
+}
+
 
 
 function expandSalesPlanRow(sourceSheet, rowNumber) {
@@ -119,4 +136,117 @@ function testExpandLatestSalesPlanRow() {
   SpreadsheetApp.getUi().alert(
     '最新の営業予定フォーム回答を営業予定シートへ展開しました。'
   );
+}
+
+
+/*************************************************
+ * 営業予定重複チェック
+ *************************************************/
+function isDuplicateSalesPlan(planId){
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('営業予定');
+
+  const lastRow = sheet.getLastRow();
+
+  if(lastRow < 2) return false;
+
+  const ids = sheet
+    .getRange(2,1,lastRow-1,1)
+    .getValues()
+    .flat()
+    .map(String);
+
+  return ids.includes(String(planId));
+
+}
+
+/*************************************************
+ * 営業予定状態更新
+ *************************************************/
+function updateSalesPlanStatus(planId,status){
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('営業予定');
+
+  const lastRow = sheet.getLastRow();
+
+  if(lastRow < 2) return;
+
+  const values = sheet
+    .getRange(2,1,lastRow-1,12)
+    .getValues();
+
+  for(let i=0;i<values.length;i++){
+
+    if(String(values[i][0])===String(planId)){
+
+      sheet.getRange(i+2,12).setValue(status);
+
+      return;
+
+    }
+
+  }
+
+}
+
+/*************************************************
+ * 訪問履歴とのリンク（今は雛形）
+ *************************************************/
+function linkVisitHistory(planId,visitId){
+
+  const sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName('営業予定');
+
+  const lastRow = sheet.getLastRow();
+
+  if(lastRow < 2) return;
+
+  const values = sheet
+    .getRange(2,1,lastRow-1,13)
+    .getValues();
+
+  for(let i=0;i<values.length;i++){
+
+    if(String(values[i][0])===String(planId)){
+
+      sheet.getRange(i+2,13).setValue(visitId);
+
+      return;
+
+    }
+
+  }
+
+}
+
+
+/*************************************************
+ * 営業予定フォーム送信トリガー作成
+ *************************************************/
+function setupSalesPlanSubmitTrigger() {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const triggers = ScriptApp.getProjectTriggers();
+
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'onSalesPlanSubmit') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger('onSalesPlanSubmit')
+    .forSpreadsheet(ss)
+    .onFormSubmit()
+    .create();
+
+  SpreadsheetApp.getUi().alert(
+    '営業予定フォーム送信トリガーを作成しました。'
+  );
+
 }

@@ -47,9 +47,9 @@ function ensureSalesPlanReportUrlColumn() {
 
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-  if (!headers.includes('営業報告URL')) {
+  if (!headers.includes('営業報告')) {
     const nextCol = sheet.getLastColumn() + 1;
-    sheet.getRange(1, nextCol).setValue('営業報告URL');
+    sheet.getRange(1, nextCol).setValue('営業報告');
   }
 }
 
@@ -117,7 +117,8 @@ function updateSalesPlanReportUrls() {
   const dateCol = col('日付');
   const staffCol = col('営業担当');
   const companyCol = col('営業先');
-  const reportUrlCol = col('営業報告URL');
+  let reportUrlCol = col('営業報告');
+  if (reportUrlCol === 0) reportUrlCol = col('営業報告URL');
 
   Logger.log('⑥列番号 planId=' + planIdCol + ', date=' + dateCol + ', staff=' + staffCol + ', company=' + companyCol + ', url=' + reportUrlCol);
 
@@ -145,7 +146,9 @@ function updateSalesPlanReportUrls() {
 
     Logger.log('⑩URL生成完了');
 
-    sheet.getRange(row, reportUrlCol).setValue(url);
+    sheet.getRange(row, reportUrlCol).setFormula(
+      '=HYPERLINK("' + url + '","報告する")'
+    );
     Logger.log('⑪URL書き込み完了');
   }
 
@@ -244,4 +247,17 @@ function testUpdateSalesPlanFromLatestVisitReport() {
   updateSalesPlanFromVisitReportRow_(sourceSheet, lastRow);
 
   SpreadsheetApp.getUi().alert('最新の営業活動報告から営業予定を更新しました。');
+}
+
+function hideOldSalesReportUrlColumn() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('営業予定');
+  if (!sheet) throw new Error('営業予定シートがありません');
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const oldCol = headers.indexOf('営業報告URL') + 1;
+
+  if (oldCol > 0) {
+    sheet.hideColumns(oldCol);
+  }
 }

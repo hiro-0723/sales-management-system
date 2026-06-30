@@ -142,6 +142,11 @@ setValueByHeader('住所', address);
 function maintenanceSalesMasterAndForm() {
   cleanupSalesMaster();
   rebuildSalesMaster();
+  updateAllForms();
+
+  SpreadsheetApp.getUi().alert(
+    '営業先データ整理と全フォーム同期が完了しました。'
+  );
 }
 
 function cleanupSalesMaster() {
@@ -401,4 +406,15 @@ function rebuildSalesMaster() {
 
   SpreadsheetApp.getUi().alert(message);
   Logger.log(message);
+}
+
+
+function updateAllForms() {
+
+  updateReferralFormChoices();
+
+  updateSalesPlanFormChoices();
+
+  Logger.log('全フォーム候補を更新しました');
+
 }

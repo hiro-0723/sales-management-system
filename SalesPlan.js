@@ -11,17 +11,21 @@ function setupSalesPlanSheet() {
   }
 
   const headers = [
+    'PlanID',
     'タイムスタンプ',
     '日付',
-    '予定時間',
     '営業担当',
     '営業先',
+    '予定時間',
     '目的',
     '優先度',
     '予定所要時間',
     '同行者',
     '備考',
-    '状態'
+    '状態',
+    '訪問履歴ID',
+    '紹介件数',
+    '契約件数'
   ];
 
   sheet.clear();
@@ -186,51 +190,96 @@ function getSalesMasterNames_() {
 }
 
 
-function updateSalesPlanFormChoices() {
+/*************************************************
+ * 営業予定フォーム回答 → 営業予定シート展開エンジン
+ *************************************************/
 
-  const props = PropertiesService.getScriptProperties();
+function testExpandLatestSalesPlanRow() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  const formId = props.getProperty('SALES_PLAN_FORM_ID');
+  const sourceSheet = ss.getSheets()
+    .filter(sheet =>
+      sheet.getName().includes('営業予定入力フォーム') ||
+      sheet.getName().includes('フォームの回答')
+    )
+    .sort((a, b) => b.getLastRow() - a.getLastRow())[0];
 
-  if (!formId) {
-    SpreadsheetApp.getUi().alert(
-      '営業予定フォームがまだ作成されていません。'
-    );
+  if (!sourceSheet) {
+    SpreadsheetApp.getUi().alert('営業予定フォームの回答シートが見つかりません。');
     return;
   }
 
-  const form = FormApp.openById(formId);
+  const lastRow = sourceSheet.getLastRow();
 
-  const salesNames = getSalesMasterNames_();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('回答データがありません。');
+    return;
+  }
 
-  const staffNames = getSalesStaffNames_();
-
-  form.getItems().forEach(item => {
-
-    const title = item.getTitle();
-
-    if (
-      item.getType() === FormApp.ItemType.LIST &&
-      title === '営業担当'
-    ) {
-
-      item.asListItem().setChoiceValues(staffNames);
-
-    }
-
-    if (
-      item.getType() === FormApp.ItemType.LIST &&
-      title.match(/^予定\d+ 営業先$/)
-    ) {
-
-      item.asListItem().setChoiceValues(salesNames);
-
-    }
-
-  });
+  expandSalesPlanRow(sourceSheet, lastRow);
 
   SpreadsheetApp.getUi().alert(
-    '営業予定フォーム候補を更新しました。'
+    '最新の営業予定フォーム回答を営業予定シートへ展開しました。'
   );
+}
 
+function expandSalesPlanRow(sourceSheet, rowNumber) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const targetSheet = ss.getSheetByName('営業予定');
+
+  if (!targetSheet) {
+    throw new Error('営業予定シートがありません');
+  }
+
+  const headers = sourceSheet
+    .getRange(1, 1, 1, sourceSheet.getLastColumn())
+    .getValues()[0];
+
+  const row = sourceSheet
+    .getRange(rowNumber, 1, 1, sourceSheet.getLastColumn())
+    .getValues()[0];
+
+  const get = title => {
+    const i = headers.indexOf(title);
+    return i === -1 ? '' : row[i];
+  };
+
+  const timestamp = get('タイムスタンプ');
+  const date = get('日付');
+  const staff = get('営業担当');
+
+  for (let i = 1; i <= 10; i++) {
+    const company = get('予定' + i + ' 営業先');
+
+    if (!company) continue;
+
+    const time = get('予定' + i + ' 予定時間');
+    const purpose = get('予定' + i + ' 目的');
+    const priority = get('予定' + i + ' 優先度');
+    const minutes = get('予定' + i + ' 予定所要時間（分）');
+    const companion = get('予定' + i + ' 同行者');
+    const memo = get('予定' + i + ' 備考');
+
+    const planId =
+      Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMddHHmmss') +
+      '-' + i;
+
+    targetSheet.appendRow([
+      planId,
+      timestamp,
+      date,
+      staff,
+      company,
+      time,
+      purpose,
+      priority,
+      minutes,
+      companion,
+      memo,
+      '予定',
+      '',
+      0,
+      0
+    ]);
+  }
 }

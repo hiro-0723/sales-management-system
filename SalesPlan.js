@@ -1,82 +1,38 @@
 function setupSalesPlanSheet() {
-
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('営業予定');
 
-  const sheetName = '営業予定';
-
-  let sheet = ss.getSheetByName(sheetName);
-
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-  }
+  if (!sheet) sheet = ss.insertSheet('営業予定');
 
   const headers = [
-    'PlanID',
-    'タイムスタンプ',
-    '日付',
-    '営業担当',
-    '営業先',
-    '予定時間',
-    '目的',
-    '優先度',
-    '予定所要時間',
-    '同行者',
-    '備考',
-    '状態',
-    '訪問履歴ID',
-    '紹介件数',
-    '契約件数'
+    'PlanID','タイムスタンプ','日付','営業担当','営業先','予定時間','目的','優先度',
+    '予定所要時間','同行者','備考','状態','訪問履歴ID','紹介件数','契約件数'
   ];
 
-  sheet.clear();
-
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-
   sheet.setFrozenRows(1);
-
-  sheet.autoResizeColumns(1, headers.length);
-
-  sheet.getRange('A:A').setNumberFormat('yyyy/MM/dd HH:mm:ss');
-  sheet.getRange('B:B').setNumberFormat('yyyy/MM/dd');
-  sheet.getRange('C:C').setNumberFormat('HH:mm');
+  sheet.getRange('B:B').setNumberFormat('yyyy/MM/dd HH:mm:ss');
+  sheet.getRange('C:C').setNumberFormat('yyyy/MM/dd');
+  sheet.getRange('F:F').setNumberFormat('HH:mm');
 
   const statusRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(['予定', '完了', '延期'], true)
     .build();
 
-  sheet.getRange(2, 11, 5000, 1).setDataValidation(statusRule);
-
-  SpreadsheetApp.getUi().alert('営業予定シートを最新版へ更新しました。');
+  sheet.getRange(2, 12, 5000, 1).setDataValidation(statusRule);
 }
 
-
-function setupSalesPlanForm() {
+function createNewSalesPlanForm() {
+  Logger.log('① 新フォーム作成開始');
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  setupSalesPlanSheet();
-
   const props = PropertiesService.getScriptProperties();
-  const savedFormId = props.getProperty('SALES_PLAN_FORM_ID');
 
-  let form;
+  const form = FormApp.create('営業予定入力フォーム');
+  Logger.log('② フォーム作成完了');
 
-  if (savedFormId) {
-    try {
-      form = FormApp.openById(savedFormId);
-    } catch (e) {
-      form = FormApp.create('営業予定入力フォーム');
-      props.setProperty('SALES_PLAN_FORM_ID', form.getId());
-    }
-  } else {
-    form = FormApp.create('営業予定入力フォーム');
-    props.setProperty('SALES_PLAN_FORM_ID', form.getId());
-  }
-
-  // 既存項目を全削除して作り直す
-  form.getItems().forEach(item => form.deleteItem(item));
-
-  form.setTitle('営業予定入力フォーム');
+  props.setProperty('SALES_PLAN_FORM_ID', form.getId());
+  Logger.log('③ フォームID保存完了');
 
   form.setDescription(
     '1回の送信で最大10件まで営業予定を登録できます。\n' +
@@ -84,9 +40,7 @@ function setupSalesPlanForm() {
     '未使用の予定欄は空欄のままで構いません。'
   );
 
-  form.addDateItem()
-    .setTitle('日付')
-    .setRequired(true);
+  form.addDateItem().setTitle('日付').setRequired(true);
 
   form.addListItem()
     .setTitle('営業担当')
@@ -96,8 +50,7 @@ function setupSalesPlanForm() {
   const salesNames = getSalesMasterNames_();
 
   for (let i = 1; i <= 10; i++) {
-    form.addSectionHeaderItem()
-      .setTitle('予定' + i);
+    form.addSectionHeaderItem().setTitle('予定' + i);
 
     form.addListItem()
       .setTitle('予定' + i + ' 営業先')
@@ -123,53 +76,61 @@ function setupSalesPlanForm() {
 
     form.addListItem()
       .setTitle('予定' + i + ' 優先度')
-      .setChoiceValues([
-        '★★★',
-        '★★',
-        '★'
-      ])
+      .setChoiceValues(['★★★', '★★', '★'])
       .setRequired(false);
 
-    form.addTextItem()
-      .setTitle('予定' + i + ' 予定所要時間（分）')
-      .setRequired(false);
-
-    form.addTextItem()
-      .setTitle('予定' + i + ' 同行者')
-      .setRequired(false);
-
-    form.addParagraphTextItem()
-      .setTitle('予定' + i + ' 備考')
-      .setRequired(false);
+    form.addTextItem().setTitle('予定' + i + ' 予定所要時間（分）').setRequired(false);
+    form.addTextItem().setTitle('予定' + i + ' 同行者').setRequired(false);
+    form.addParagraphTextItem().setTitle('予定' + i + ' 備考').setRequired(false);
   }
 
-  form.setDestination(
-    FormApp.DestinationType.SPREADSHEET,
-    ss.getId()
-  );
+  Logger.log('④ 項目作成完了');
+
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+  Logger.log('⑤ 回答先設定完了');
 
   SpreadsheetApp.getUi().alert(
-    '営業予定フォームを作成・更新しました。\n\n' +
+    '新しい営業予定フォームを作成し、使用フォームIDを切り替えました。\n\n' +
     form.getPublishedUrl()
   );
 
-  Logger.log('営業予定フォーム 編集URL: ' + form.getEditUrl());
-  Logger.log('営業予定フォーム 公開URL: ' + form.getPublishedUrl());
+  Logger.log('編集URL: ' + form.getEditUrl());
+  Logger.log('公開URL: ' + form.getPublishedUrl());
 }
 
+// 旧名は残すが、既存フォーム再構築はしない
+function setupSalesPlanForm() {
+  createNewSalesPlanForm();
+}
+
+function updateSalesPlanFormChoices() {
+  const props = PropertiesService.getScriptProperties();
+  const formId = props.getProperty('SALES_PLAN_FORM_ID');
+
+  if (!formId) {
+    SpreadsheetApp.getUi().alert('営業予定フォームIDが未設定です。');
+    return;
+  }
+
+  const form = FormApp.openById(formId);
+  const salesNames = getSalesMasterNames_();
+  const staffNames = getSalesStaffNames_();
+
+  form.getItems().forEach(item => {
+    const title = item.getTitle();
+
+    if (item.getType() === FormApp.ItemType.LIST && title === '営業担当') {
+      item.asListItem().setChoiceValues(staffNames);
+    }
+
+    if (item.getType() === FormApp.ItemType.LIST && /^予定\d+ 営業先$/.test(title)) {
+      item.asListItem().setChoiceValues(salesNames);
+    }
+  });
+}
 
 function getSalesStaffNames_() {
-  return [
-    '生貝',
-    '田丸',
-    '北浦',
-    '小形',
-    '渡辺',
-    '高橋亜',
-    '石井直',
-    '大谷',
-    '大下'
-  ];
+  return ['生貝','田丸','北浦','小形','渡辺','高橋亜','石井直','大谷','大下'];
 }
 
 function getSalesMasterNames_() {
@@ -189,97 +150,25 @@ function getSalesMasterNames_() {
     .filter(v => v !== '');
 }
 
+function debugSalesPlanForm() {
+  const formId = PropertiesService.getScriptProperties().getProperty('SALES_PLAN_FORM_ID');
 
-/*************************************************
- * 営業予定フォーム回答 → 営業予定シート展開エンジン
- *************************************************/
-
-function testExpandLatestSalesPlanRow() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  const sourceSheet = ss.getSheets()
-    .filter(sheet =>
-      sheet.getName().includes('営業予定入力フォーム') ||
-      sheet.getName().includes('フォームの回答')
-    )
-    .sort((a, b) => b.getLastRow() - a.getLastRow())[0];
-
-  if (!sourceSheet) {
-    SpreadsheetApp.getUi().alert('営業予定フォームの回答シートが見つかりません。');
+  if (!formId) {
+    Logger.log('SALES_PLAN_FORM_ID がありません');
     return;
   }
 
-  const lastRow = sourceSheet.getLastRow();
+  const form = FormApp.openById(formId);
 
-  if (lastRow < 2) {
-    SpreadsheetApp.getUi().alert('回答データがありません。');
-    return;
-  }
+  Logger.log('フォームID: ' + formId);
+  Logger.log('編集URL: ' + form.getEditUrl());
+  Logger.log('公開URL: ' + form.getPublishedUrl());
+  Logger.log('タイトル: ' + form.getTitle());
 
-  expandSalesPlanRow(sourceSheet, lastRow);
+  const items = form.getItems();
+  Logger.log('項目数: ' + items.length);
 
-  SpreadsheetApp.getUi().alert(
-    '最新の営業予定フォーム回答を営業予定シートへ展開しました。'
-  );
-}
-
-function expandSalesPlanRow(sourceSheet, rowNumber) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const targetSheet = ss.getSheetByName('営業予定');
-
-  if (!targetSheet) {
-    throw new Error('営業予定シートがありません');
-  }
-
-  const headers = sourceSheet
-    .getRange(1, 1, 1, sourceSheet.getLastColumn())
-    .getValues()[0];
-
-  const row = sourceSheet
-    .getRange(rowNumber, 1, 1, sourceSheet.getLastColumn())
-    .getValues()[0];
-
-  const get = title => {
-    const i = headers.indexOf(title);
-    return i === -1 ? '' : row[i];
-  };
-
-  const timestamp = get('タイムスタンプ');
-  const date = get('日付');
-  const staff = get('営業担当');
-
-  for (let i = 1; i <= 10; i++) {
-    const company = get('予定' + i + ' 営業先');
-
-    if (!company) continue;
-
-    const time = get('予定' + i + ' 予定時間');
-    const purpose = get('予定' + i + ' 目的');
-    const priority = get('予定' + i + ' 優先度');
-    const minutes = get('予定' + i + ' 予定所要時間（分）');
-    const companion = get('予定' + i + ' 同行者');
-    const memo = get('予定' + i + ' 備考');
-
-    const planId =
-      Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMddHHmmss') +
-      '-' + i;
-
-    targetSheet.appendRow([
-      planId,
-      timestamp,
-      date,
-      staff,
-      company,
-      time,
-      purpose,
-      priority,
-      minutes,
-      companion,
-      memo,
-      '予定',
-      '',
-      0,
-      0
-    ]);
-  }
+  items.forEach((item, index) => {
+    Logger.log((index + 1) + ': ' + item.getTitle() + ' / ' + item.getType());
+  });
 }

@@ -6,6 +6,7 @@ function onOpen() {
     .addSeparator()
     .addItem('営業予定シートを作成する', 'setupSalesPlanSheet')
     .addItem('営業予定フォームを作成する', 'setupSalesPlanForm')
+    .addItem('営業予定フォーム候補を更新する', 'updateSalesPlanFormChoices')
     .addSeparator()
     .addItem('システム診断', 'systemHealthCheck')
     .addItem('システム構成を書き出す', 'exportAllSchemasToDrive')

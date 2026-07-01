@@ -408,9 +408,59 @@ function rebuildSalesMaster() {
   Logger.log(message);
 }
 
+/**
+ * Phase3: フォーム同期エンジン
+ * 全フォームの候補を一括更新する。
+ */
 function updateAllForms() {
-  updateReferralFormChoices();
-  updateSalesPlanFormChoices();
+  const results = [];
 
-  Logger.log('全フォーム候補を最新化しました。');
+  results.push(runFormUpdate_('紹介実績フォーム', updateReferralFormChoices));
+  results.push(runFormUpdate_('営業予定フォーム', updateSalesPlanFormChoices));
+  results.push(runFormUpdate_('地域情報共有フォーム', updateRegionInfoFormChoices));
+
+  const message =
+    '全フォーム候補を最新化しました。\\n\\n' +
+    results.join('\\n');
+
+  Logger.log(message);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss) {
+    ss.toast('全フォーム候補を最新化しました。', 'フォーム同期', 5);
+  }
+
+  return message;
+}
+
+/**
+ * フォーム更新処理を安全に実行する共通関数
+ */
+function runFormUpdate_(label, fn) {
+  try {
+    if (typeof fn !== 'function') {
+      return '△ ' + label + ': 更新関数が未実装です';
+    }
+
+    const result = fn();
+
+    if (result) {
+      return result;
+    }
+
+    return '○ ' + label + ': 更新完了';
+  } catch (error) {
+    Logger.log(error);
+    return '× ' + label + ': エラー - ' + error.message;
+  }
+}
+
+/**
+ * Phase6で本実装予定。
+ * 現時点では地域情報共有フォーム未作成のためスキップする。
+ */
+function updateRegionInfoFormChoices() {
+  const message = '△ 地域情報共有フォーム: 未実装のためスキップ';
+  Logger.log(message);
+  return message;
 }

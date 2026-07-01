@@ -108,7 +108,9 @@ function convertCheckedRegionInfoToSalesPlan() {
   let addedCount = 0;
   let skippedCount = 0;
 
-  for (let row = 2; row <= regionSheet.getLastRow(); row++) {
+  const lastRegionRow = getLastRegionInfoDataRow_(regionSheet, rcol('地域情報ID'));
+
+  for (let row = 2; row <= lastRegionRow; row++) {
     const shouldAdd = regionSheet.getRange(row, rcol('営業予定へ追加')).getValue() === true;
     if (!shouldAdd) continue;
 
@@ -154,6 +156,10 @@ function convertCheckedRegionInfoToSalesPlan() {
         salesSheet.getRange(nextRow, col).setValue(valuesByHeader[header]);
       }
     });
+
+    if (typeof updateSalesPlanReportUrlForRow === 'function') {
+      updateSalesPlanReportUrlForRow(nextRow);
+    }
 
     regionSheet.getRange(row, rcol('営業予定PlanID')).setValue(planId);
     regionSheet.getRange(row, rcol('営業予定反映日')).setValue(new Date());
@@ -271,5 +277,22 @@ function getNextSalesPlanTargetRow_(sheet) {
   }
 
   return maxRows + 1;
+}
+
+function getLastRegionInfoDataRow_(sheet, regionIdCol) {
+  if (regionIdCol === 0) {
+    throw new Error('地域情報ID列がありません');
+  }
+
+  const maxRows = sheet.getMaxRows();
+  const values = sheet.getRange(2, regionIdCol, maxRows - 1, 1).getValues();
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (values[i][0]) {
+      return i + 2;
+    }
+  }
+
+  return 1;
 }
 

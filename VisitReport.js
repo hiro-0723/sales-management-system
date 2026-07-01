@@ -261,3 +261,45 @@ function hideOldSalesReportUrlColumn() {
     sheet.hideColumns(oldCol);
   }
 }
+
+/**
+ * 営業予定シートの指定行だけ営業報告URLを更新する
+ */
+function updateSalesPlanReportUrlForRow(row) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('営業予定');
+  if (!sheet) throw new Error('営業予定シートがありません');
+
+  ensureSalesPlanReportUrlColumn();
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const col = name => headers.indexOf(name) + 1;
+
+  const planIdCol = col('PlanID');
+  const dateCol = col('日付');
+  const staffCol = col('営業担当');
+  const companyCol = col('営業先');
+  let reportUrlCol = col('営業報告');
+  if (reportUrlCol === 0) reportUrlCol = col('営業報告URL');
+
+  if (row < 2) throw new Error('更新対象行が不正です: ' + row);
+  if (planIdCol === 0) throw new Error('PlanID列がありません');
+  if (companyCol === 0) throw new Error('営業先列がありません');
+  if (reportUrlCol === 0) throw new Error('営業報告列がありません');
+
+  const planId = sheet.getRange(row, planIdCol).getValue();
+  const company = sheet.getRange(row, companyCol).getValue();
+
+  if (!planId || !company) return;
+
+  const url = buildVisitReportPrefilledUrl_({
+    planId: planId,
+    date: sheet.getRange(row, dateCol).getValue(),
+    staff: sheet.getRange(row, staffCol).getValue(),
+    company: company
+  });
+
+  sheet.getRange(row, reportUrlCol).setFormula(
+    '=HYPERLINK("' + url + '","報告する")'
+  );
+}

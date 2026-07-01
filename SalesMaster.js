@@ -455,12 +455,3 @@ function runFormUpdate_(label, fn) {
   }
 }
 
-/**
- * Phase6で本実装予定。
- * 現時点では地域情報共有フォーム未作成のためスキップする。
- */
-function updateRegionInfoFormChoices() {
-  const message = '△ 地域情報共有フォーム: 未実装のためスキップ';
-  Logger.log(message);
-  return message;
-}

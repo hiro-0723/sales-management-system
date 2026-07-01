@@ -65,6 +65,17 @@ function setupRegionInfoSheet() {
 
 function setupRegionInfoValidation_(sheet) {
   const lastRow = Math.max(sheet.getMaxRows(), 1000);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  const col = name => headers.indexOf(name) + 1;
+
+  const statusCol = col('対応状況');
+  const addCol = col('営業予定へ追加');
+  const staffCol = col('営業担当');
+
+  if (statusCol === 0) throw new Error('地域情報共有シートに「対応状況」列がありません');
+  if (addCol === 0) throw new Error('地域情報共有シートに「営業予定へ追加」列がありません');
+  if (staffCol === 0) throw new Error('地域情報共有シートに「営業担当」列がありません');
 
   const statusRule = SpreadsheetApp.newDataValidation()
     .requireValueInList([
@@ -78,20 +89,20 @@ function setupRegionInfoValidation_(sheet) {
     .setAllowInvalid(false)
     .build();
 
-  sheet.getRange(2, 10, lastRow - 1, 1).setDataValidation(statusRule);
+  sheet.getRange(2, statusCol, lastRow - 1, 1).setDataValidation(statusRule);
 
   const addRule = SpreadsheetApp.newDataValidation()
     .requireCheckbox()
     .build();
 
-  sheet.getRange(2, 13, lastRow - 1, 1).setDataValidation(addRule);
+  sheet.getRange(2, addCol, lastRow - 1, 1).setDataValidation(addRule);
 
   const staffRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(getSalesStaffNames_(), true)
     .setAllowInvalid(false)
     .build();
 
-  sheet.getRange(2, 14, lastRow - 1, 1).setDataValidation(staffRule);
+  sheet.getRange(2, staffCol, lastRow - 1, 1).setDataValidation(staffRule);
 }
 
 function setupRegionInfoForm() {

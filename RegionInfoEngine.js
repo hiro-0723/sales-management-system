@@ -134,7 +134,7 @@ function convertCheckedRegionInfoToSalesPlan() {
     if (!company) throw new Error(row + '行目：関連先が未入力です');
 
     const planId = createRegionSalesPlanId_();
-    const nextRow = salesSheet.getLastRow() + 1;
+    const nextRow = getNextSalesPlanTargetRow_(salesSheet);
 
     const valuesByHeader = {
       'PlanID': planId,
@@ -243,6 +243,26 @@ function getNextRegionInfoTargetRow_(sheet) {
 
   const maxRows = sheet.getMaxRows();
   const values = sheet.getRange(2, regionIdCol, maxRows - 1, 1).getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    if (!values[i][0]) {
+      return i + 2;
+    }
+  }
+
+  return maxRows + 1;
+}
+
+function getNextSalesPlanTargetRow_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const planIdCol = headers.indexOf('PlanID') + 1;
+
+  if (planIdCol === 0) {
+    throw new Error('営業予定シートにPlanID列がありません');
+  }
+
+  const maxRows = sheet.getMaxRows();
+  const values = sheet.getRange(2, planIdCol, maxRows - 1, 1).getValues();
 
   for (let i = 0; i < values.length; i++) {
     if (!values[i][0]) {

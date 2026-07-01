@@ -33,6 +33,7 @@ function setupRegionInfoSheet() {
   }
 
   const headers = [
+    '地域情報ID',
     'タイムスタンプ',
     '投稿者',
     '部署',

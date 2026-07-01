@@ -8,6 +8,9 @@ function onOpen() {
     .addSeparator()
     .addItem('フォーム候補を最新化', 'updateAllForms')
     .addSeparator()
+    .addItem('営業ダッシュボード作成', 'setupDashboard')
+    .addItem('営業ダッシュボード更新', 'updateDashboard')
+    .addSeparator()
     .addItem('システム診断', 'systemHealthCheck')
     .addItem('システム構成を書き出す', 'exportAllSchemasToDrive')
     .addToUi();

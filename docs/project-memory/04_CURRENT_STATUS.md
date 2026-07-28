@@ -4,12 +4,14 @@
 
 - 更新日：2026-07-28
 - 現在のPhase：v2.0設計準備
-- 現在のStep：新エージェントシステムv2資料生成・ローカル検証完了、GitHub保存前
+- 現在のStep：新エージェントシステムv2移行完了、LINE WORKS連携設計開始前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
-- 現在の作業ツリー：新エージェントシステムv2資料と開始ツールが未追跡。既存Apps Scriptコードの変更なし。
+- 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
+- 移行コミットのGitHub同期：完了
+- 現在の作業ツリー：クリーン。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -28,14 +30,14 @@ Googleフォーム中心の入力UIをLINE WORKS中心へ移行するv2.0の設�
 LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google Sheets
 ```
 
-## 4. 現在扱う1つの目的
+## 4. 完了した移行目的
 
 - 目的：新エージェントシステムv2の運用資料と開始ツールを既存リポジトリへ導入する。
 - 完了条件：Project Memory 4資料、AGENTS.md、Roadmap、検証資料、開始ツールが揃い、構成と差分を確認し、利用者の許可後にGitHubへ保存できる。
 - 変更対象：`AGENTS.md`、`docs/`、`tools/start_chat.sh`
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、トリガー、実データ、外部環境
 - 読む検証手順：`docs/verification/release-checklist.md`
-- 必要な許可：ローカル資料生成は確認済み。commit・pushは別途許可が必要。
+- 保存結果：利用者の許可後、commit・push完了
 
 ## 5. 実施済みの確認
 

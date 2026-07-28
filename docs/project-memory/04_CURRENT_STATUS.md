@@ -4,14 +4,16 @@
 
 - 更新日：2026-07-28
 - 現在のPhase：v2.0設計準備
-- 現在のStep：LINE WORKS連携の要件・入力境界設計案を作成、利用者確認前
+- 現在のStep：LINE WORKS連携の初期技術構成・検証計画を作成、外部環境準備前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 現在の作業ツリー：LINE WORKS設計資料とProject Memoryに未コミット変更あり。既存Apps Scriptコードの変更なし。
+- 最新安定コミット：`6a84d00b0a85286d673737c114c0acc11df40234 LINE WORKS連携の要件と入力境界を設計`
+- 最新安定コミットのGitHub同期：完了
+- 現在の作業ツリー：初期技術構成、検証計画、Project Memoryに未コミット変更あり。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -43,16 +45,27 @@ LINE WORKS
 - 読む検証手順：`docs/verification/release-checklist.md`
 - 保存結果：利用者の許可後、commit・push完了
 
-## 5. 現在扱う1つの目的
+## 5. 完了した設計目的
 
 - 目的：LINE WORKS連携の要件と、既存業務ロジックへ渡す入力境界を設計する。
 - 結果：`docs/design/LINE_WORKS_INTEGRATION_REQUIREMENTS.md`に設計案を作成。
 - 重要な判定：LINE WORKSが必須とする署名ヘッダーをApps Scriptの`doPost(e)`で取得できる公式根拠がないため、直接受信案は現時点で採用しない。
 - 推奨案：署名検証可能なWebhook受信層で検証・早期応答し、検証済みイベントだけをApps Scriptの入力アダプターへ渡す。
 - 変更しない範囲：既存Apps Script、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：利用者の構成判断前。コード実装は未着手。
+- 保存結果：利用者の許可後、`6a84d00`としてcommit・push完了。
 
-## 6. 実施済みの確認
+## 6. 現在扱う1つの目的
+
+- 目的：Webhook受信層、非同期処理、Apps Script内部接続、最初の機能、テスト環境を具体化する。
+- 推奨構成：Cloud Run functions → Cloud Tasks → 署名付きApps Script内部入口。
+- Apps Script API：サービスアカウント非対応のため初期版では不採用。
+- 最初の範囲：テスト用Botの1対1トークから地域情報共有のみ。
+- テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
+- 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
+- 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
+- 状態：設計・確認計画のみ。外部環境作成とコード実装は未着手。
+
+## 7. 実施済みの確認
 
 - 全既存`.js`：`node --check`成功
 - `appsscript.json`と2つのスキーマJSON：構文確認成功
@@ -62,7 +75,7 @@ LINE WORKS
 - 既存Apps Scriptコード・設定・スキーマの差分：なし
 - `git diff --check`：問題なし
 
-## 7. 未確認事項
+## 8. 未確認事項
 
 - LINE WORKSの利用方式、API、認証、Webhook署名
 - 利用者識別と営業担当名の対応
@@ -71,11 +84,17 @@ LINE WORKS
 - Googleフォームとの並行運用と終了条件
 - Apps Scriptのデプロイ・権限・復元方法
 - 本番Apps Scriptが`3e2a301`と一致しているか
-- Google Cloudの利用可否とWebhook受信層の製品選定
-- 最初の対象を地域情報共有とするか
-- 1対1トーク限定で開始するか
+- 他タスクで実装済みのGoogle Cloudプロジェクト、サービス、権限、Botの実態
+- テスト用Botを作成できるテナント・ドメイン
+- テスト用Apps Scriptとスプレッドシートの保存先
+- テスト利用者IDと社内表示名の対応
 
-## 8. 未着手機能
+確認済み：
+
+- Google Cloudを利用できるアカウントと請求設定がある。
+- LINE WORKS Developer Consoleと管理者画面へアクセスできる。
+
+## 9. 未着手機能
 
 - LINE WORKS連携要件の利用者確認・確定
 - LINE WORKS Webhook受信
@@ -87,11 +106,11 @@ LINE WORKS
 - Phase 9「予定・実績・紹介の振り返り」
 - Phase 10「AI支援・アラート」
 
-## 9. 次のStep
+## 10. 次のStep
 
-利用者が設計案の確認事項へ回答し、Webhook受信層、最初の対象機能、テスト範囲を確定する。実装はその確認後に開始する。
+他タスクで実装済みのGoogle CloudとLINE WORKS連携について、プロジェクト、サービス、Bot、権限、保存場所を読み取り確認する。その結果から再利用範囲を決め、外部状態を変えないローカル実装の骨格作成を開始する。
 
-## 10. 更新ルール
+## 11. 更新ルール
 
 - 作業終了時または重要な安定地点で更新する。
 - 文書移行だけで既存機能のPhaseを完了扱いにしない。

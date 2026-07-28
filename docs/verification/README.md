@@ -15,7 +15,7 @@
 | 文書・設定・GitHub保存 | `release-checklist.md` |
 | Apps Script関数 | `apps-script-function-test.md` |
 | Googleフォーム・画面 | `browser-screen-test.md` |
-| LINE WORKS連携 | 公式仕様と実機で方法を確立後、専用手順を追加 |
+| LINE WORKS連携 | `line-works-webhook-test.md` |
 | データ構造・移行 | 実施前に専用手順を作成 |
 
 ## 4. 共通項目

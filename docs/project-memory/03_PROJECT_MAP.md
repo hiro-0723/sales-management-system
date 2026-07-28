@@ -30,6 +30,7 @@ sales-management-system/
 ├── sales-management-system-full-schema.json
 ├── docs/
 │   ├── ROADMAP.md
+│   ├── design/
 │   ├── guides/
 │   ├── project-memory/
 │   └── verification/
@@ -53,6 +54,7 @@ sales-management-system/
 | `RegionInfoEngine.js` | 転記、予定変換、重複防止 | v2.0で流用候補 |
 | `Dashboard.js` | 営業ダッシュボード | 閲覧用画面 |
 | `OCR.js` | 名刺OCR | 安定モジュールとして直接改修を避ける |
+| `docs/design/LINE_WORKS_INTEGRATION_REQUIREMENTS.md` | LINE WORKS連携の要件・入力境界設計 | 利用者確認前の設計案を実装仕様として扱わない |
 
 ## 4. 主要な処理
 
@@ -87,6 +89,7 @@ sales-management-system/
 | Google Drive | スキーマや関連ファイル | 作成・更新前に対象と許可 |
 | Gemini API | 名刺OCR | 認証情報をGitへ保存しない |
 | LINE WORKS | v2.0入力UI候補 | 方式、権限、送信情報は未確定 |
+| Google Cloud受信層 | LINE WORKS署名検証・早期応答・非同期化の候補 | 製品、費用、権限、復元方法は未確定 |
 | GitHub | 安定地点と履歴 | commit・pushは許可後 |
 
 ## 7. 標準コマンド

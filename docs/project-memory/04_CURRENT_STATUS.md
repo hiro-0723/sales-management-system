@@ -4,14 +4,14 @@
 
 - 更新日：2026-07-28
 - 現在のPhase：v2.0設計準備
-- 現在のStep：新エージェントシステムv2移行完了、LINE WORKS連携設計開始前
+- 現在のStep：LINE WORKS連携の要件・入力境界設計案を作成、利用者確認前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 現在の作業ツリー：クリーン。既存Apps Scriptコードの変更なし。
+- 現在の作業ツリー：LINE WORKS設計資料とProject Memoryに未コミット変更あり。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -27,7 +27,11 @@ Googleフォーム中心の入力UIをLINE WORKS中心へ移行するv2.0の設�
 想定構成：
 
 ```text
-LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google Sheets
+LINE WORKS
+  → 署名検証可能なWebhook受信層
+  → 検証済みイベント
+  → Apps Script入力アダプター
+  → 既存業務ロジック・Google Sheets
 ```
 
 ## 4. 完了した移行目的
@@ -39,7 +43,16 @@ LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google She
 - 読む検証手順：`docs/verification/release-checklist.md`
 - 保存結果：利用者の許可後、commit・push完了
 
-## 5. 実施済みの確認
+## 5. 現在扱う1つの目的
+
+- 目的：LINE WORKS連携の要件と、既存業務ロジックへ渡す入力境界を設計する。
+- 結果：`docs/design/LINE_WORKS_INTEGRATION_REQUIREMENTS.md`に設計案を作成。
+- 重要な判定：LINE WORKSが必須とする署名ヘッダーをApps Scriptの`doPost(e)`で取得できる公式根拠がないため、直接受信案は現時点で採用しない。
+- 推奨案：署名検証可能なWebhook受信層で検証・早期応答し、検証済みイベントだけをApps Scriptの入力アダプターへ渡す。
+- 変更しない範囲：既存Apps Script、Google Sheets、Google Forms、LINE WORKS設定、実データ。
+- 状態：利用者の構成判断前。コード実装は未着手。
+
+## 6. 実施済みの確認
 
 - 全既存`.js`：`node --check`成功
 - `appsscript.json`と2つのスキーマJSON：構文確認成功
@@ -49,7 +62,7 @@ LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google She
 - 既存Apps Scriptコード・設定・スキーマの差分：なし
 - `git diff --check`：問題なし
 
-## 6. 未確認事項
+## 7. 未確認事項
 
 - LINE WORKSの利用方式、API、認証、Webhook署名
 - 利用者識別と営業担当名の対応
@@ -58,10 +71,13 @@ LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google She
 - Googleフォームとの並行運用と終了条件
 - Apps Scriptのデプロイ・権限・復元方法
 - 本番Apps Scriptが`3e2a301`と一致しているか
+- Google Cloudの利用可否とWebhook受信層の製品選定
+- 最初の対象を地域情報共有とするか
+- 1対1トーク限定で開始するか
 
-## 7. 未着手機能
+## 8. 未着手機能
 
-- LINE WORKS連携の要件定義
+- LINE WORKS連携要件の利用者確認・確定
 - LINE WORKS Webhook受信
 - LINE WORKSからの営業予定登録
 - LINE WORKSからの営業報告
@@ -71,11 +87,11 @@ LINE WORKS → Webhook → Apps Script → 既存業務ロジック・Google She
 - Phase 9「予定・実績・紹介の振り返り」
 - Phase 10「AI支援・アラート」
 
-## 8. 次のStep
+## 9. 次のStep
 
-新エージェントシステムv2の資料差分を利用者が確認し、許可後にcommit・pushする。その次にLINE WORKS連携の公式仕様と現場要件を確認し、既存エンジンへ渡す入力境界を設計する。
+利用者が設計案の確認事項へ回答し、Webhook受信層、最初の対象機能、テスト範囲を確定する。実装はその確認後に開始する。
 
-## 9. 更新ルール
+## 10. 更新ルール
 
 - 作業終了時または重要な安定地点で更新する。
 - 文書移行だけで既存機能のPhaseを完了扱いにしない。

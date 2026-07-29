@@ -18,12 +18,13 @@
 - Google Cloud環境と既存LINE WORKS Bot・Secretの対応確認完了
 - Cloud Tasks API、営業管理専用実行アカウント、専用テストキューの準備完了
 - 個人情報を含まない空のテスト用Sheetsと専用Driveフォルダの準備完了
-- 営業管理専用Bot、Secret、Cloud Run、Apps Scriptの準備
+- テスト用Apps Scriptの作成と専用Sheetsへの接続完了
+- 営業管理専用Bot、Secret、Cloud Runの準備
 - 地域情報共有の1対1トーク検証準備
 
 ## 今後予定
 
-1. テスト用Apps Scriptを作成し、準備済みの空Sheetsへ接続する。
+1. Apps Script内部入口のローカル実装骨格とテストを作成する。
 2. 署名検証用Cloud Run、営業管理専用Secret、テストBotを準備する。
 3. Googleフォームを残したまま、Webhook受付、署名検証、非同期配送、Apps Script内部入口の最小経路を実装する。
 4. テスト環境で営業予定登録、営業報告、地域情報共有を順番に検証する。

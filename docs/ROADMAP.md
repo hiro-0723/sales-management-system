@@ -14,13 +14,14 @@
 
 ## 進行中
 
-- Cloud Run functions、Cloud Tasks、Apps Script内部入口を使う初期構成案の確認
-- 他タスクで実装済みのGoogle Cloud・LINE WORKS連携の再利用可能範囲確認
+- Cloud Runサービス、Cloud Tasks、Apps Script内部入口を使う初期構成案の確認
+- Google Cloud環境と既存LINE WORKS Bot・Secretの対応確認完了
+- 営業管理専用Botとクラウドリソースの準備方針を確定中
 - 地域情報共有の1対1トーク検証準備
 
 ## 今後予定
 
-1. 他タスクのGoogle Cloudプロジェクト、サービス、Bot、権限、テスト保存先を読み取り確認する。
+1. 営業管理テスト用Botを作成できるテナント・ドメインとテスト保存先を確定する。
 2. 署名検証用受信層、Cloud Tasks、テストBot、テストApps Script、テストSheetsを準備する。
 3. Googleフォームを残したまま、Webhook受付、署名検証、非同期配送、Apps Script内部入口の最小経路を実装する。
 4. テスト環境で営業予定登録、営業報告、地域情報共有を順番に検証する。

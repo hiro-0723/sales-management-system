@@ -2,18 +2,18 @@
 
 ## 1. 基本状態
 
-- 更新日：2026-07-28
+- 更新日：2026-07-29
 - 現在のPhase：v2.0設計準備
-- 現在のStep：LINE WORKS連携の初期技術構成・検証計画を作成、外部環境準備前
+- 現在のStep：既存Google Cloud・LINE WORKS認証構成を確認し、営業管理専用リソースの分離方針を確定
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 最新安定コミット：`6a84d00b0a85286d673737c114c0acc11df40234 LINE WORKS連携の要件と入力境界を設計`
+- 最新安定コミット：`b7b919e9805738cde2ceb2141dcfed5567fa013b LINE WORKS連携の初期技術構成と検証計画を策定`
 - 最新安定コミットのGitHub同期：完了
-- 現在の作業ツリー：初期技術構成、検証計画、Project Memoryに未コミット変更あり。既存Apps Scriptコードの変更なし。
+- 現在の作業ツリー：実環境確認結果に基づく設計資料の補正あり。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -57,13 +57,13 @@ LINE WORKS
 ## 6. 現在扱う1つの目的
 
 - 目的：Webhook受信層、非同期処理、Apps Script内部接続、最初の機能、テスト環境を具体化する。
-- 推奨構成：Cloud Run functions → Cloud Tasks → 署名付きApps Script内部入口。
+- 推奨構成：営業管理専用Cloud Runサービス → Cloud Tasks → 署名付きApps Script内部入口。
 - Apps Script API：サービスアカウント非対応のため初期版では不採用。
 - 最初の範囲：テスト用Botの1対1トークから地域情報共有のみ。
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：設計・確認計画のみ。外部環境作成とコード実装は未着手。
+- 状態：既存Google Cloud環境のメタデータ確認済み。営業管理用外部リソース作成とコード実装は未着手。
 
 ## 7. 実施済みの確認
 
@@ -84,7 +84,6 @@ LINE WORKS
 - Googleフォームとの並行運用と終了条件
 - Apps Scriptのデプロイ・権限・復元方法
 - 本番Apps Scriptが`3e2a301`と一致しているか
-- 他タスクで実装済みのGoogle Cloudプロジェクト、サービス、権限、Botの実態
 - テスト用Botを作成できるテナント・ドメイン
 - テスト用Apps Scriptとスプレッドシートの保存先
 - テスト利用者IDと社内表示名の対応
@@ -93,6 +92,11 @@ LINE WORKS
 
 - Google Cloudを利用できるアカウントと請求設定がある。
 - LINE WORKS Developer Consoleと管理者画面へアクセスできる。
+- Google Cloudプロジェクト`lw-detail-poc-20260724`でCloud Run、Artifact Registry、Secret Managerを利用できる。
+- 既存Cloud Runサービス、実行アカウント、Secretは別用途として維持し、営業管理用には共用しない。
+- 既存LINE WORKS Bot、サービスアカウント、4つのSecretは`lw-detail-auth`のSmile Riha用途に接続されている。
+- 既存Secretの値は確認せず、識別情報とマウント関係だけを確認した。
+- Cloud Tasks APIは未有効。
 
 ## 9. 未着手機能
 
@@ -108,7 +112,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-他タスクで実装済みのGoogle CloudとLINE WORKS連携について、プロジェクト、サービス、Bot、権限、保存場所を読み取り確認する。その結果から再利用範囲を決め、外部状態を変えないローカル実装の骨格作成を開始する。
+営業管理テスト用Botを作成できるテナント・ドメインとテスト用Apps Script・Sheetsの保存先を確定する。その後、営業管理専用Cloud Runサービス、実行アカウント、Cloud Tasksキューの作成手順とローカル実装の骨格を準備する。
 
 ## 11. 更新ルール
 

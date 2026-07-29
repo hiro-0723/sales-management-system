@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
-更新日：2026-07-28
-状態：初期構成案。外部環境は未作成、コードは未実装。
+更新日：2026-07-29
+状態：初期構成案。既存Google Cloud・LINE WORKS認証構成のメタデータ確認済み、営業管理用リソースとコードは未作成。
 
 ## 1. 今回の1目的
 
@@ -9,7 +9,7 @@ LINE WORKS連携の最初の検証に使用するWebhook受信層、非同期処
 
 ## 2. 採用する初期方針
 
-- Webhook受信層：Cloud Run functions（第2世代相当、Node.js）
+- Webhook受信層：Cloud Runサービス（Node.jsコンテナ）
 - 非同期化：Cloud Tasks
 - Apps Script接続：専用Webアプリ入口へ署名付きJSONをPOST
 - 最初のLINE WORKS利用範囲：テスト用Botの1対1トーク
@@ -22,7 +22,7 @@ LINE WORKS連携の最初の検証に使用するWebhook受信層、非同期処
 ```text
 LINE WORKSテスト用Bot
   ↓ HTTPS Callback
-Cloud Run functions: callbackReceiver
+Cloud Run: sales-lineworks-webhook-test
   1. 生の本文とヘッダーを取得
   2. Bot IDを確認
   3. X-WORKS-Signatureを検証
@@ -52,11 +52,13 @@ Apps Script Webアプリ: doPost
 LINE WORKS利用者
 ```
 
-## 4. Cloud Run functionsを選ぶ理由
+## 4. Cloud Runサービスを選ぶ理由
 
-Cloud Run functionsはHTTP関数として小さく開始でき、受信リクエストのヘッダーと本文を扱える。LINE WORKS署名検証に必要な`X-WORKS-Signature`は`X-Google-*`ではなく、Google Cloudが削除対象として明示するヘッダーにも該当しない。
+Cloud Runサービスは受信リクエストのヘッダーと生の本文を扱えるため、LINE WORKSの`X-WORKS-Signature`を検証できる。既存Google Cloudプロジェクトでは、通常のCloud Runサービス、Artifact Registry、Secret Managerがすでに利用可能で、Cloud Functions APIは有効化されていない。
 
-初期検証では独自コンテナ管理を必要とせず、1つの受信関数へ責務を限定できる。複数エンドポイント、独自ミドルウェア、複雑な常駐処理が必要になった場合は通常のCloud Runサービスへ移行を検討する。
+そのため、新しい製品と権限を増やすCloud Run functionsではなく、確認済みの運用方式へ合わせた通常のCloud Runサービスを採用する。営業管理用サービスは既存の`lw-detail-auth`へ同居させず、別サービスとして作成する。
+
+この変更のメリットは、既存のデプロイ方式とコンテナ保存先を流用でき、サービス単位で権限、ログ、ロールバックを分離できること。デメリットは、コンテナ構成とデプロイ設定を営業管理側で管理する必要があること。影響範囲はWebhook受信層の実装・デプロイ・検証手順だけで、既存Apps Scriptの業務ロジックとデータ構造は変更しない。
 
 ## 5. Cloud Tasksを選ぶ理由
 
@@ -70,7 +72,7 @@ Cloud Tasksのタスク名だけを永続的な冪等性保証にしない。App
 
 ## 6. Apps Script APIを採用しない理由
 
-Google Apps Script APIの`scripts.run`はリモート実行に使えるが、公式資料ではサービスアカウントに対応しないと明記されている。Cloud Run functionsからの無人実行には継続的な利用者OAuthトークン管理が必要になり、初期構成として複雑になる。
+Google Apps Script APIの`scripts.run`はリモート実行に使えるが、公式資料ではサービスアカウントに対応しないと明記されている。Cloud Runからの無人実行には継続的な利用者OAuthトークン管理が必要になり、初期構成として複雑になる。
 
 そのため初期版では、Apps Scriptを専用Webアプリとして公開し、Cloud Tasksから送る内部ペイロード自体をHMAC-SHA256で署名する。
 
@@ -116,7 +118,7 @@ Apps Script側では次をすべて満たす場合だけ処理する。
 
 ### 外部入口
 
-Cloud Run functionsだけをLINE WORKS Callback URLとして公開する。LINE WORKS署名の検証に失敗したリクエストはCloud Tasksへ登録しない。
+営業管理用Cloud RunサービスだけをLINE WORKS Callback URLとして公開する。LINE WORKS署名の検証に失敗したリクエストはCloud Tasksへ登録しない。
 
 ### 内部入口
 
@@ -129,7 +131,7 @@ Apps Script WebアプリURLは技術上アクセス可能でも、内部署名�
 - LINE WORKS Bot Secret
 - LINE WORKS Client Secret
 - LINE WORKS Service Account秘密鍵
-- Cloud Run functionsからApps Scriptへ渡す内部共有秘密
+- 営業管理用Cloud RunサービスからApps Scriptへ渡す内部共有秘密
 
 ### Apps Script Script Properties
 
@@ -145,25 +147,39 @@ Apps Script WebアプリURLは技術上アクセス可能でも、内部署名�
 - Cloud Loggingの本文
 - LINE WORKSへのエラー返信
 
-## 10. Google Cloud環境案
+## 10. Google Cloud環境
 
-初期検証は本番と分離したGoogle Cloudプロジェクトを推奨する。
+確認済みのテスト・POC用プロジェクト`lw-detail-poc-20260724`を、初期検証の配置候補とする。既存の`lw-detail-auth`と`lw-detail-runtime`は別用途のため変更・共用せず、営業管理専用リソースを分離する。
 
 ```text
-Google Cloud test project
-├── Cloud Run functions
-│   └── callbackReceiver
+Google Cloud project: lw-detail-poc-20260724
+├── Cloud Run
+│   ├── lw-detail-auth（既存・変更しない）
+│   └── sales-lineworks-webhook-test（新規候補）
 ├── Cloud Tasks
-│   └── lineworks-events-test
+│   └── sales-lineworks-events-test（新規候補）
+├── Artifact Registry
+│   └── lw-detail（既存。格納方針を実装前に確認）
 ├── Secret Manager
-│   ├── lineworks-bot-secret-test
-│   └── apps-script-internal-secret-test
+│   ├── 既存LINE WORKS用Secret（対象Botを確認するまで流用しない）
+│   └── sales-apps-script-internal-secret-test（新規候補）
 ├── Service Accounts
-│   └── lineworks-webhook-test
+│   ├── lw-detail-runtime（既存・変更しない）
+│   └── sales-lineworks-runtime（新規候補）
 └── Cloud Logging
 ```
 
-サービスアカウントには、Cloud Tasksへの登録と必要なSecretの参照だけを許可する。既定サービスアカウントへ広い権限を与えない。
+営業管理用サービスアカウントには、Cloud Tasksへの登録と営業管理で必要なSecretの参照だけを許可する。既存実行アカウントや既定サービスアカウントへ権限を追加しない。
+
+確認済み：
+
+- Cloud Run、Artifact Registry、Secret Manager APIは有効。
+- Cloud Tasks APIは未有効。実装開始の許可後に必要性を再確認して有効化する。
+- 既存Cloud Runサービスは外部呼び出し可能だが、営業管理用Callbackには使わない。
+- 既存実行アカウントは既存Secretを参照できる。Secret値は未参照。
+- 既存Cloud RunにはLINE WORKSのClient、Bot、サービスアカウント、監査用Secretがファイルとしてマウントされている。
+- 既存のBot・認証情報は`lw-detail-auth`のSmile Riha用途に結び付くため、営業管理では流用しない。
+- Secret値は確認せず、識別情報とマウント関係だけを確認した。
 
 ## 11. 最初の機能
 
@@ -220,7 +236,7 @@ Bot：「地域情報ID REG-... で登録しました」
 3. Apps Scriptテスト用プロジェクトとテスト用スプレッドシートを準備する。
 4. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。
 5. Cloud TasksからApps Script内部入口への疎通を確認する。
-6. Cloud Run functionsへ署名検証だけを実装する。
+6. 営業管理用Cloud Runサービスへ署名検証だけを実装する。
 7. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
 8. 署名不一致と正常Callbackを確認する。
 9. 地域情報共有の会話状態を追加する。
@@ -233,7 +249,7 @@ LINE WORKSのCallback URL設定は、受信関数の署名検証とログ制御�
 - LINE WORKSのCallbackを無効化する。
 - テストBotの利用者公開を解除する。
 - Cloud Tasksキューを一時停止する。
-- Cloud Run functionsのトラフィックを直前リビジョンへ戻す。
+- 営業管理用Cloud Runサービスのトラフィックを直前リビジョンへ戻す。
 - Apps Scriptテストデプロイを直前バージョンへ戻す。
 - テスト用データを事前値へ復元する。
 
@@ -243,20 +259,17 @@ LINE WORKSのCallback URL設定は、受信関数の署名検証とログ制御�
 
 - Google Cloudを利用できるアカウントと請求設定：利用可能と利用者確認済み
 - LINE WORKS Developer Consoleと管理者画面：アクセス可能と利用者確認済み
-- 他タスクで作成済みのGoogle Cloudプロジェクト、サービス、Bot、権限を再利用できるか
 - テスト用Botを作成してよいテナント・ドメイン
 - テスト用Apps Scriptとスプレッドシートの保存先
 - LINE WORKS利用者IDと社内表示名のテスト用対応表
 - テストに使ってよいダミーの部署、分類、関連先
 
-他タスクの実装は存在すると聞いているが、この資料作成時点では実際のプロジェクト、Bot、設定、権限を未確認である。次Stepで読み取り確認し、推測で再利用対象を決めない。
+Google Cloudのプロジェクト、Cloud Run、実行アカウント、Artifact Registry、Secretのメタデータと権限、および既存BotとSecretの接続関係は確認済み。既存Botと認証情報は別用途のため、営業管理用には流用しない。
 
 ## 17. 参照した公式資料
 
-- Cloud Run functions「Request Headers」
-  https://cloud.google.com/functions/docs/reference/headers
-- Cloud Run functions「HTTP request body」
-  https://cloud.google.com/functions/docs/samples/functions-http-content
+- Cloud Run「Container runtime contract」
+  https://cloud.google.com/run/docs/container-contract
 - Cloud Tasks「Create HTTP target tasks programmatically」
   https://cloud.google.com/tasks/docs/creating-http-target-tasks
 - Cloud Tasks「Understand Cloud Tasks」

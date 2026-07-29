@@ -5,7 +5,7 @@
 ## 1. 対象
 
 - テスト用LINE WORKS Bot
-- Cloud Run functionsのWebhook受信関数
+- 営業管理用Cloud Runサービス
 - Cloud Tasksのテスト用キュー
 - Apps Scriptテスト用Webアプリ
 - テスト用Google Sheets

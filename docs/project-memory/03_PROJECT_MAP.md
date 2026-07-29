@@ -55,7 +55,7 @@ sales-management-system/
 | `Dashboard.js` | 営業ダッシュボード | 閲覧用画面 |
 | `OCR.js` | 名刺OCR | 安定モジュールとして直接改修を避ける |
 | `docs/design/LINE_WORKS_INTEGRATION_REQUIREMENTS.md` | LINE WORKS連携の要件・入力境界設計 | 推奨方針は確認済み。未確定詳細を推測しない |
-| `docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md` | 初期Webhook構成、非同期処理、テスト環境 | 外部環境作成前の構成案 |
+| `docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md` | 初期Webhook構成、非同期処理、テスト環境 | Google Cloudメタデータ確認済み。営業管理用リソースは未作成 |
 
 ## 4. 主要な処理
 
@@ -109,7 +109,7 @@ sales-management-system/
 | 文書・設定 | 対象文書・設定 | `docs/verification/release-checklist.md` |
 | Apps Script関数 | 対象`.js` | `docs/verification/apps-script-function-test.md` |
 | フォーム・画面 | Googleフォーム、将来のLINE WORKS | `docs/verification/browser-screen-test.md` |
-| LINE WORKS Webhook | Cloud Run functions、Cloud Tasks、Apps Script入口 | `docs/verification/line-works-webhook-test.md` |
+| LINE WORKS Webhook | Cloud Runサービス、Cloud Tasks、Apps Script入口 | `docs/verification/line-works-webhook-test.md` |
 | データ構造・移行 | スキーマ、シート、移行処理 | 専用手順を実作業前に作成 |
 | GitHub保存 | 差分とProject Memory | `docs/verification/release-checklist.md` |
 

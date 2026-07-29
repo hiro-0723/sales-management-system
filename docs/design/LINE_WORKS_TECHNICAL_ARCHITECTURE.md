@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
 更新日：2026-07-29
-状態：初期構成案。既存Google Cloud・LINE WORKS認証構成のメタデータ確認済み、営業管理用リソースとコードは未作成。
+状態：初期構成案。営業管理用Google Cloud基盤と空のテスト用Sheetsを作成済み、Bot・Secret・Cloud Run・Apps Script・コードは未作成。
 
 ## 1. 今回の1目的
 
@@ -157,7 +157,7 @@ Google Cloud project: lw-detail-poc-20260724
 │   ├── lw-detail-auth（既存・変更しない）
 │   └── sales-lineworks-webhook-test（新規候補）
 ├── Cloud Tasks
-│   └── sales-lineworks-events-test（新規候補）
+│   └── sales-lineworks-events-test（作成済み）
 ├── Artifact Registry
 │   └── lw-detail（既存。格納方針を実装前に確認）
 ├── Secret Manager
@@ -165,7 +165,7 @@ Google Cloud project: lw-detail-poc-20260724
 │   └── sales-apps-script-internal-secret-test（新規候補）
 ├── Service Accounts
 │   ├── lw-detail-runtime（既存・変更しない）
-│   └── sales-lineworks-runtime（新規候補）
+│   └── sales-lineworks-runtime（作成済み）
 └── Cloud Logging
 ```
 
@@ -174,7 +174,12 @@ Google Cloud project: lw-detail-poc-20260724
 確認済み：
 
 - Cloud Run、Artifact Registry、Secret Manager APIは有効。
-- Cloud Tasks APIは未有効。実装開始の許可後に必要性を再確認して有効化する。
+- Cloud Tasks APIは有効化済み。
+- `sales-lineworks-runtime`を作成し、Cloud Tasks登録権限だけを付与した。
+- `sales-lineworks-events-test`を作成した。最大2件/秒、同時2件、最大5回、最大10分の有限再試行とする。
+- Google Driveに営業管理v2専用テストフォルダを作成した。
+- 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
+- 本番「営業管理マスター」は対象確認だけを行い、複製・変更していない。
 - 既存Cloud Runサービスは外部呼び出し可能だが、営業管理用Callbackには使わない。
 - 既存実行アカウントは既存Secretを参照できる。Secret値は未参照。
 - 既存Cloud RunにはLINE WORKSのClient、Bot、サービスアカウント、監査用Secretがファイルとしてマウントされている。
@@ -231,16 +236,18 @@ Bot：「地域情報ID REG-... で登録しました」
 
 ## 14. 初期デプロイ順序
 
-1. Google Cloudテストプロジェクトを用意する。
-2. 必要なAPI、サービスアカウント、Secret Manager、Cloud Tasksを準備する。
-3. Apps Scriptテスト用プロジェクトとテスト用スプレッドシートを準備する。
-4. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。
-5. Cloud TasksからApps Script内部入口への疎通を確認する。
-6. 営業管理用Cloud Runサービスへ署名検証だけを実装する。
-7. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
-8. 署名不一致と正常Callbackを確認する。
-9. 地域情報共有の会話状態を追加する。
-10. Googleフォームと既存処理の回帰確認を行う。
+1. Google Cloudテストプロジェクトを用意する。（確認済み）
+2. Cloud Tasks API、営業管理用サービスアカウント、Cloud Tasksキューを準備する。（完了）
+3. 営業管理用Secretを、対象Botと内部接続の確定後に準備する。
+4. 個人情報を含まないテスト用スプレッドシートを準備する。（完了）
+5. Apps Scriptテスト用プロジェクトを準備する。
+6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。
+7. Cloud TasksからApps Script内部入口への疎通を確認する。
+8. 営業管理用Cloud Runサービスへ署名検証だけを実装する。
+9. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
+10. 署名不一致と正常Callbackを確認する。
+11. 地域情報共有の会話状態を追加する。
+12. Googleフォームと既存処理の回帰確認を行う。
 
 LINE WORKSのCallback URL設定は、受信関数の署名検証とログ制御が確認できた後に行う。
 

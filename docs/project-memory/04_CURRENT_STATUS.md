@@ -4,7 +4,7 @@
 
 - 更新日：2026-07-29
 - 現在のPhase：v2.0設計準備
-- 現在のStep：既存Google Cloud・LINE WORKS認証構成を確認し、営業管理専用リソースの分離方針を確定
+- 現在のStep：営業管理専用Google Cloud基盤と空のテスト用Sheetsを準備し、Apps Script・Bot作成前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
@@ -13,7 +13,7 @@
 - 移行コミットのGitHub同期：完了
 - 最新安定コミット：`b7b919e9805738cde2ceb2141dcfed5567fa013b LINE WORKS連携の初期技術構成と検証計画を策定`
 - 最新安定コミットのGitHub同期：完了
-- 現在の作業ツリー：実環境確認結果に基づく設計資料の補正あり。既存Apps Scriptコードの変更なし。
+- 現在の作業ツリー：Google Cloud基盤の作成結果を文書へ反映中。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：既存Google Cloud環境のメタデータ確認済み。営業管理用外部リソース作成とコード実装は未着手。
+- 状態：Cloud Tasks API、専用実行アカウント、専用テストキュー、専用Driveフォルダ、空のテスト用Sheetsを作成済み。Bot、Secret、Cloud Run、Apps Script、コードは未作成。
 
 ## 7. 実施済みの確認
 
@@ -96,7 +96,13 @@ LINE WORKS
 - 既存Cloud Runサービス、実行アカウント、Secretは別用途として維持し、営業管理用には共用しない。
 - 既存LINE WORKS Bot、サービスアカウント、4つのSecretは`lw-detail-auth`のSmile Riha用途に接続されている。
 - 既存Secretの値は確認せず、識別情報とマウント関係だけを確認した。
-- Cloud Tasks APIは未有効。
+- Cloud Tasks APIは有効化済み。
+- 営業管理専用実行アカウント`sales-lineworks-runtime`を作成し、Cloud Tasks登録権限だけを付与した。
+- テストキュー`sales-lineworks-events-test`を作成し、低速・有限再試行に設定した。
+- Google Drive上の本番「営業管理マスター」を特定したが、個人情報保護のため複製・変更していない。
+- 専用Driveフォルダ「営業管理システム v2 テスト」を作成した。
+- 空のテスト用Sheets「営業管理システム v2 LINE WORKSテスト」を作成し、README、地域情報共有（生データ）、地域情報共有の3タブを確認した。
+- テスト用Sheetsは日本語ロケール、Asia/Tokyo、データシートの1行目固定を確認した。
 
 ## 9. 未着手機能
 
@@ -112,7 +118,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-営業管理テスト用Botを作成できるテナント・ドメインとテスト用Apps Script・Sheetsの保存先を確定する。その後、営業管理専用Cloud Runサービス、実行アカウント、Cloud Tasksキューの作成手順とローカル実装の骨格を準備する。
+テスト用Apps Scriptプロジェクトを作成し、空のテスト用Sheetsへ接続する。その後、営業管理専用Bot・Secret・Cloud Runサービスとローカル実装の骨格を準備する。
 
 ## 11. 更新ルール
 

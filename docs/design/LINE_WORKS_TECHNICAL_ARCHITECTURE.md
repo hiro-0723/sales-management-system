@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
 更新日：2026-07-29
-状態：初期構成案。営業管理用Google Cloud基盤、空のテスト用Sheets、Sheetsに紐付くApps Scriptを作成済み。Bot・Secret・Cloud Run・連携コードは未作成。
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口とCloud Runタスク処理はローカル実装・自動テスト済み。Bot・Secret・Cloud Runデプロイ・外部反映は未実施。
 
 ## 1. 今回の1目的
 
@@ -35,7 +35,15 @@ Cloud Tasks: lineworks-events-test
   ├─ タスク名による短期重複防止
   ├─ 配信速度制御
   ├─ 有限回の再試行
-  └─ 署名付きJSONをPOST
+  └─ OIDC付きで署名付きJSONをPOST
+  ↓
+Cloud Run: /tasks/process
+  1. Cloud Run IAM/OIDCで呼び出し元を認証
+  2. キュー名を追加確認
+  3. Apps Script内部入口へ署名付きJSONをPOST
+  4. Apps ScriptのJSON結果を確認
+  5. 成功・恒久エラーはHTTP 200
+  6. 一時エラーはHTTP 503としてCloud Tasksへ返す
   ↓
 Apps Script Webアプリ: doPost
   1. 内部署名と時刻を検証
@@ -70,11 +78,35 @@ Cloud Runサービスは受信リクエストのヘッダーと生の本文を�
 
 Cloud Tasksのタスク名だけを永続的な冪等性保証にしない。Apps Script側でも`requestId`を保存し、再試行時に二重登録しない。
 
+Cloud TasksからApps Scriptへは直接送らない。Apps Script Webアプリが返せる公式な出力は`TextOutput`または`HtmlOutput`であり、業務結果に応じたHTTPステータスを明示設定する公式手段を確認できない。一方、Cloud Tasksは2xxを成功、非2xxを失敗として再試行を判断する。
+
+そのためCloud Tasksは営業管理用Cloud Runの`/tasks/process`を呼び、Cloud RunがApps ScriptのJSON結果をHTTP 200または503へ変換する。
+
+変更理由：
+
+- Sheets一時障害などを成功扱いにせず、Cloud Tasksへ再試行させるため。
+
+メリット：
+
+- 一時失敗と恒久的な入力エラーを区別できる。
+- Cloud TasksからCloud Runへの呼び出しをIAM/OIDCで保護できる。
+- 追加のCloud Runサービスを増やさず、外部Callbackと内部タスク処理を経路で分離できる。
+
+デメリット：
+
+- Cloud Runに`/tasks/process`の責務が増える。
+- Apps ScriptのJSON応答仕様とCloud RunのHTTP変換仕様を一緒に管理する必要がある。
+
+影響範囲：
+
+- Cloud Run実装、Cloud Tasksの送信先、検証・障害対応手順。
+- 既存Apps Script、本番Sheets、既存ID体系、Googleフォームは変更しない。
+
 ## 6. Apps Script APIを採用しない理由
 
 Google Apps Script APIの`scripts.run`はリモート実行に使えるが、公式資料ではサービスアカウントに対応しないと明記されている。Cloud Runからの無人実行には継続的な利用者OAuthトークン管理が必要になり、初期構成として複雑になる。
 
-そのため初期版では、Apps Scriptを専用Webアプリとして公開し、Cloud Tasksから送る内部ペイロード自体をHMAC-SHA256で署名する。
+そのため初期版では、Apps Scriptを専用Webアプリとして公開し、Cloud Runから送る内部ペイロード自体をHMAC-SHA256で署名する。
 
 ## 7. Apps Script内部入口の安全要件
 
@@ -121,6 +153,8 @@ Apps Script側では次をすべて満たす場合だけ処理する。
 営業管理用Cloud RunサービスだけをLINE WORKS Callback URLとして公開する。LINE WORKS署名の検証に失敗したリクエストはCloud Tasksへ登録しない。
 
 ### 内部入口
+
+Cloud TasksからCloud Runの`/tasks/process`へはOIDCを付ける。Cloud Run IAMを主な認証境界とし、Cloud Tasksヘッダーだけを認証に使用しない。
 
 Apps Script WebアプリURLは技術上アクセス可能でも、内部署名、短い有効期限、requestIdの冪等性確認を通らない本文は処理しない。URL自体を秘密情報の代わりにしない。
 
@@ -242,13 +276,14 @@ Bot：「地域情報ID REG-... で登録しました」
 3. 営業管理用Secretを、対象Botと内部接続の確定後に準備する。
 4. 個人情報を含まないテスト用スプレッドシートを準備する。（完了）
 5. Apps Scriptテスト用プロジェクトを準備する。（完了）
-6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。
-7. Cloud TasksからApps Script内部入口への疎通を確認する。
-8. 営業管理用Cloud Runサービスへ署名検証だけを実装する。
-9. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
-10. 署名不一致と正常Callbackを確認する。
-11. 地域情報共有の会話状態を追加する。
-12. Googleフォームと既存処理の回帰確認を行う。
+6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（ローカル骨格・自動テスト完了）
+7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
+8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。
+9. 営業管理用Cloud RunサービスへCallback署名検証を実装する。
+10. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
+11. 署名不一致と正常Callbackを確認する。
+12. 地域情報共有の会話状態を追加する。
+13. Googleフォームと既存処理の回帰確認を行う。
 
 LINE WORKSのCallback URL設定は、受信関数の署名検証とログ制御が確認できた後に行う。
 
@@ -282,6 +317,8 @@ Google Cloudのプロジェクト、Cloud Run、実行アカウント、Artifact
   https://cloud.google.com/tasks/docs/creating-http-target-tasks
 - Cloud Tasks「Understand Cloud Tasks」
   https://cloud.google.com/tasks/docs/dual-overview
+- Cloud Tasks REST「Task」
+  https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks
 - Secret Manager「Best practices」
   https://cloud.google.com/secret-manager/docs/best-practices
 - Google Apps Script API「Execute functions with the Google Apps Script API」

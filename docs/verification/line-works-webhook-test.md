@@ -19,6 +19,21 @@
 - テスト利用者とダミーデータが決まっている。
 - 作成・更新・削除対象と復元方法について許可を得ている。
 
+## 2.1 ローカル自動テスト
+
+```bash
+node --test lineworks/apps-script/InternalApi.test.cjs
+node --test lineworks/cloud-run/test/task-result.test.js
+```
+
+正常条件：
+
+- Apps Script 6ケースがすべて成功する。
+- Cloud Run 4ケースがすべて成功する。
+- 署名不一致、期限切れ、重複、処理途中復旧、一時失敗を含む。
+- Apps Script一時失敗はCloud RunでHTTP 503へ変換される。
+- 恒久的な入力エラーはHTTP 200で完了し、無駄な再試行を行わない。
+
 ## 3. 署名検証
 
 | ケース | 期待結果 |
@@ -35,7 +50,7 @@
 ## 4. Callback応答
 
 - 正常CallbackへHTTP 200を返す。
-- Cloud Tasks登録後、Apps Script処理完了を待たずに応答する。
+- Cloud Tasks登録後、Apps Script処理完了を待たずにLINE WORKSへ応答する。
 - 連続送信時も後続イベントを不必要に待たせない。
 - 受付失敗時の応答と再送挙動を確認する。
 
@@ -43,13 +58,15 @@
 
 | ケース | 期待結果 |
 |---|---|
-| 正常タスク | Apps Scriptへ1回登録される |
+| 正常タスク | Cloud Runタスク処理を経由し、Apps Scriptへ1回登録される |
 | Apps Script一時失敗 | 設定した範囲で再試行 |
 | 永続的な入力エラー | 無制限再試行しない |
 | 同じタスク名 | 短期重複として拒否 |
 | 同じrequestIdの再配信 | Apps Script側で二重登録しない |
 
 キューの最大配信速度と同時配信数を、Apps ScriptとSheetsの安全な範囲へ制限する。
+
+Cloud Tasksの送信先はApps ScriptではなくCloud Run`/tasks/process`とする。Cloud Run IAM/OIDCで認証し、Apps ScriptのJSON結果が`retryable: true`の場合だけHTTP 503を返す。
 
 ## 6. Apps Script内部入口
 

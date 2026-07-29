@@ -4,7 +4,7 @@
 
 - 更新日：2026-07-29
 - 現在のPhase：v2.0設計準備
-- 現在のStep：テスト用Apps Scriptを専用Sheetsへ接続し、内部入口のローカル実装前
+- 現在のStep：Apps Script内部入口とCloud Runタスク処理のローカル骨格・自動テスト完了、外部反映前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
@@ -13,7 +13,7 @@
 - 移行コミットのGitHub同期：完了
 - 最新安定コミット：`b7b919e9805738cde2ceb2141dcfed5567fa013b LINE WORKS連携の初期技術構成と検証計画を策定`
 - 最新安定コミットのGitHub同期：完了
-- 現在の作業ツリー：テスト用Apps Script作成結果を文書へ反映中。既存Apps Scriptコードの変更なし。
+- 現在の作業ツリー：LINE WORKS専用ローカル骨格、テスト、設計補正に未コミット変更あり。既存Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：Cloud Tasks API、専用実行アカウント、専用テストキュー、専用Driveフォルダ、空のテスト用Sheets、Sheetsに紐付くApps Scriptを作成済み。Bot、Secret、Cloud Run、連携コードは未作成。
+- 状態：Google Cloud基盤、テストSheets、Apps Script作成済み。Apps Script内部入口とCloud Runタスク処理はローカル骨格・自動テスト完了。外部反映、Bot、Secret、Cloud Runサービスは未作成。
 
 ## 7. 実施済みの確認
 
@@ -105,6 +105,11 @@ LINE WORKS
 - テスト用Sheetsは日本語ロケール、Asia/Tokyo、データシートの1行目固定を確認した。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、所有アカウントと接続先を確認した。
 - Apps Scriptは初期の空コードだけで、デプロイ、権限承認、トリガー、Script Propertiesは未設定。
+- Apps Scriptが業務結果に応じたHTTPステータスを返せないため、Cloud Tasksの送信先をCloud Run`/tasks/process`へ補正した。
+- Apps Script内部入口に内部署名、期限、入力検証、requestId冪等性、処理途中復旧、地域情報登録のローカル骨格を追加した。
+- Cloud Runタスク処理にApps Script結果をHTTP 200/503へ変換するローカル骨格を追加した。
+- Apps Script 6ケース、Cloud Run 4ケースの自動テストがすべて成功した。
+- ルートの本番用claspから`lineworks/`を除外し、既存本番Apps Scriptの送信対象が変わらないことを`clasp status`で確認した。
 
 ## 9. 未着手機能
 
@@ -120,7 +125,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-Apps Script内部入口の認証・冪等性・地域情報登録について、外部反映前のローカル実装骨格とテストを作成する。その後、営業管理専用Bot・Secret・Cloud Runサービスを準備する。
+ローカル骨格と設計補正を確認・保存する。その後、専用内部Secretを作成し、テストApps Scriptへの反映と単体実機確認を行う。Cloud RunのデプロイとBot作成はその後に分ける。
 
 ## 11. 更新ルール
 

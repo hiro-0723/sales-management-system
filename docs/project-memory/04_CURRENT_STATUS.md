@@ -4,16 +4,16 @@
 
 - 更新日：2026-07-30
 - 現在のPhase：v2.0設計準備
-- 現在のStep：テスト用Apps Scriptへの内部入口・専用内部Secret反映完了、Webアプリデプロイ前
+- 現在のStep：テスト用Apps Script Webアプリのバージョン1をデプロイ完了、実機POST確認前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 最新安定コミット：`25bf5a4 LINE WORKS内部処理のローカル骨格を実装`
-- 最新安定コミットのGitHub同期：完了
-- 現在の作業ツリー：実環境反映結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
+- 最新ローカルコミット：`cd20e00 テスト用Apps Scriptへの内部接続反映を記録`
+- 最新ローカルコミットのGitHub同期：実行環境のDNS制限により未完了
+- 現在の作業ツリー：Webアプリデプロイ結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -104,7 +104,11 @@ LINE WORKS
 - 空のテスト用Sheets「営業管理システム v2 LINE WORKSテスト」を作成し、README、地域情報共有（生データ）、地域情報共有の3タブを確認した。
 - テスト用Sheetsは日本語ロケール、Asia/Tokyo、データシートの1行目固定を確認した。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、所有アカウントと接続先を確認した。
-- テスト用Apps Scriptへ`InternalApi.js`と`appsscript.json`を反映した。Webアプリのデプロイ、権限承認、トリガーは未設定。
+- テスト用Apps Scriptへ`InternalApi.js`と`appsscript.json`を反映した。トリガーは未設定。
+- Webアプリのバージョン1を実行者「自分」、アクセス「全員」でデプロイした。デプロイIDは`AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw`。
+- WebアプリURLは`https://script.google.com/macros/s/AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw/exec`。
+- デプロイ直後、テスト用Sheetsの地域情報共有2シートがヘッダー行だけで、データ行がないことを確認した。
+- 実行環境の外部DNS制限により、Webアプリへの署名なし・正常署名POSTは未実施。
 - 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 1を作成し、`sales-lineworks-runtime`だけへ参照権限を付与した。
 - 同じ内部Secretをテスト用Apps ScriptのScript Property`SALES_LINEWORKS_INTERNAL_SECRET`へ登録した。値は画面出力・ログ・Git・Sheetsへ保存せず、作業用一時ファイルも削除した。
 - Apps Scriptが業務結果に応じたHTTPステータスを返せないため、Cloud Tasksの送信先をCloud Run`/tasks/process`へ補正した。
@@ -127,7 +131,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-テスト用Apps ScriptをWebアプリとしてデプロイし、専用内部Secretを使った内部入口の実機疎通を確認する。Cloud RunのデプロイとBot作成は、その後に分ける。
+デプロイ済みWebアプリへ署名なし・正常署名のPOSTを送り、拒否、地域情報登録、requestId冪等性を実機確認する。その後、Cloud RunのデプロイとBot作成へ進む。
 
 ## 11. 更新ルール
 

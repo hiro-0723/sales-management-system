@@ -20,12 +20,13 @@
 - 個人情報を含まない空のテスト用Sheetsと専用Driveフォルダの準備完了
 - テスト用Apps Scriptの作成と専用Sheetsへの接続完了
 - Apps Script内部入口とCloud Runタスク処理のローカル骨格・自動テスト完了
-- 営業管理専用Bot、Secret、Cloud Runの準備
+- 営業管理専用の内部Secret作成、実行アカウントへの参照権限付与、テスト用Apps Scriptへのコード・Script Properties反映完了
+- 営業管理専用Bot、LINE WORKS用Secret、Cloud Runの準備
 - 地域情報共有の1対1トーク検証準備
 
 ## 今後予定
 
-1. 営業管理専用の内部Secretを準備し、テストApps Scriptへ内部入口を反映・単体確認する。
+1. テスト用Apps ScriptをWebアプリとしてデプロイし、内部入口の実機疎通を確認する。
 2. 署名検証・タスク処理用Cloud RunとテストBotを準備する。
 3. Googleフォームを残したまま、Webhook受付、署名検証、非同期配送、Apps Script内部入口の最小経路を実装する。
 4. テスト環境で営業予定登録、営業報告、地域情報共有を順番に検証する。

@@ -2,18 +2,18 @@
 
 ## 1. 基本状態
 
-- 更新日：2026-07-29
+- 更新日：2026-07-30
 - 現在のPhase：v2.0設計準備
-- 現在のStep：Apps Script内部入口とCloud Runタスク処理のローカル骨格・自動テスト完了、外部反映前
+- 現在のStep：テスト用Apps Scriptへの内部入口・専用内部Secret反映完了、Webアプリデプロイ前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 最新安定コミット：`b7b919e9805738cde2ceb2141dcfed5567fa013b LINE WORKS連携の初期技術構成と検証計画を策定`
+- 最新安定コミット：`25bf5a4 LINE WORKS内部処理のローカル骨格を実装`
 - 最新安定コミットのGitHub同期：完了
-- 現在の作業ツリー：LINE WORKS専用ローカル骨格、テスト、設計補正に未コミット変更あり。既存Apps Scriptコードの変更なし。
+- 現在の作業ツリー：実環境反映結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -104,7 +104,9 @@ LINE WORKS
 - 空のテスト用Sheets「営業管理システム v2 LINE WORKSテスト」を作成し、README、地域情報共有（生データ）、地域情報共有の3タブを確認した。
 - テスト用Sheetsは日本語ロケール、Asia/Tokyo、データシートの1行目固定を確認した。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、所有アカウントと接続先を確認した。
-- Apps Scriptは初期の空コードだけで、デプロイ、権限承認、トリガー、Script Propertiesは未設定。
+- テスト用Apps Scriptへ`InternalApi.js`と`appsscript.json`を反映した。Webアプリのデプロイ、権限承認、トリガーは未設定。
+- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 1を作成し、`sales-lineworks-runtime`だけへ参照権限を付与した。
+- 同じ内部Secretをテスト用Apps ScriptのScript Property`SALES_LINEWORKS_INTERNAL_SECRET`へ登録した。値は画面出力・ログ・Git・Sheetsへ保存せず、作業用一時ファイルも削除した。
 - Apps Scriptが業務結果に応じたHTTPステータスを返せないため、Cloud Tasksの送信先をCloud Run`/tasks/process`へ補正した。
 - Apps Script内部入口に内部署名、期限、入力検証、requestId冪等性、処理途中復旧、地域情報登録のローカル骨格を追加した。
 - Cloud Runタスク処理にApps Script結果をHTTP 200/503へ変換するローカル骨格を追加した。
@@ -125,7 +127,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-ローカル骨格と設計補正を確認・保存する。その後、専用内部Secretを作成し、テストApps Scriptへの反映と単体実機確認を行う。Cloud RunのデプロイとBot作成はその後に分ける。
+テスト用Apps ScriptをWebアプリとしてデプロイし、専用内部Secretを使った内部入口の実機疎通を確認する。Cloud RunのデプロイとBot作成は、その後に分ける。
 
 ## 11. 更新ルール
 

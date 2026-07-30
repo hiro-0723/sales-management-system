@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
-更新日：2026-07-29
-状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口とCloud Runタスク処理はローカル実装・自動テスト済み。Bot・Secret・Cloud Runデプロイ・外部反映は未実施。
+更新日：2026-07-30
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口はテスト用Apps Scriptへ反映し、専用内部Secretも設定済み。Cloud Runタスク処理はローカル実装・自動テスト済み。Bot・LINE WORKS用Secret・Cloud Runデプロイ・Webアプリデプロイは未実施。
 
 ## 1. 今回の1目的
 
@@ -213,7 +213,9 @@ Google Cloud project: lw-detail-poc-20260724
 - `sales-lineworks-events-test`を作成した。最大2件/秒、同時2件、最大5回、最大10分の有限再試行とする。
 - Google Driveに営業管理v2専用テストフォルダを作成した。
 - 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
-- テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成した。初期の空コードのみで、デプロイ・権限承認・トリガー・Script Propertiesは未設定。
+- テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのデプロイ・権限承認・トリガーは未設定。
+- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 1を作成し、営業管理専用実行アカウントだけへ参照権限を付与した。
+- テスト用Apps ScriptのScript Property`SALES_LINEWORKS_INTERNAL_SECRET`へ同じ値を登録した。Secret値はログ・Git・Sheetsへ保存していない。
 - 本番「営業管理マスター」は対象確認だけを行い、複製・変更していない。
 - 既存Cloud Runサービスは外部呼び出し可能だが、営業管理用Callbackには使わない。
 - 既存実行アカウントは既存Secretを参照できる。Secret値は未参照。
@@ -273,10 +275,10 @@ Bot：「地域情報ID REG-... で登録しました」
 
 1. Google Cloudテストプロジェクトを用意する。（確認済み）
 2. Cloud Tasks API、営業管理用サービスアカウント、Cloud Tasksキューを準備する。（完了）
-3. 営業管理用Secretを、対象Botと内部接続の確定後に準備する。
+3. Apps Script内部接続用Secretを準備する。（完了。LINE WORKS Bot用Secretは未準備）
 4. 個人情報を含まないテスト用スプレッドシートを準備する。（完了）
 5. Apps Scriptテスト用プロジェクトを準備する。（完了）
-6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（ローカル骨格・自動テスト完了）
+6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（自動テスト・テスト用プロジェクトへの反映完了）
 7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
 8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。
 9. 営業管理用Cloud RunサービスへCallback署名検証を実装する。

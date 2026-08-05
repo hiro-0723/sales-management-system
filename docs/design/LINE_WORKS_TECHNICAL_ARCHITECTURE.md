@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
 更新日：2026-08-05
-状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口、専用内部Secret、Webアプリのバージョン2を反映し、実機POSTで署名拒否・登録・冪等性を確認済み。Cloud Runタスク処理はローカル実装・自動テスト済み。Bot・LINE WORKS用Secret・Cloud Runデプロイは未実施。
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Script、非公開Cloud Runサービスを作成済み。Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性を確認済み。Bot・LINE WORKS用Secret・Callback受信は未実施。
 
 ## 1. 今回の1目的
 
@@ -200,6 +200,7 @@ Google Cloud project: lw-detail-poc-20260724
 ├── Service Accounts
 │   ├── lw-detail-runtime（既存・変更しない）
 │   └── sales-lineworks-runtime（作成済み）
+│   └── sales-lineworks-build（作成済み・ビルド専用）
 └── Cloud Logging
 ```
 
@@ -211,6 +212,9 @@ Google Cloud project: lw-detail-poc-20260724
 - Cloud Tasks APIは有効化済み。
 - `sales-lineworks-runtime`を作成し、Cloud Tasks登録権限だけを付与した。
 - `sales-lineworks-events-test`を作成した。最大2件/秒、同時2件、最大5回、最大10分の有限再試行とする。
+- `sales-lineworks-build`を作成し、Cloud Runソースビルドに必要な`roles/run.builder`だけを付与した。既定サービスアカウントへ追加権限は付与していない。
+- 非公開Cloud Runサービス`sales-lineworks-webhook-test`をデプロイし、`sales-lineworks-runtime`だけへ呼び出し権限を付与した。
+- Cloud TasksからOIDC付きで`/tasks/process`を呼び、HTTP 200とApps Script側の同一requestId受付記録を確認した。
 - Google Driveに営業管理v2専用テストフォルダを作成した。
 - 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのバージョン2を実行者「自分」、アクセス「全員」でデプロイ済み。トリガーは未設定。
@@ -282,7 +286,7 @@ Bot：「地域情報ID REG-... で登録しました」
 6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（自動テスト・テスト用プロジェクトへの反映完了）
 7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
 7.1 Apps Script Webアプリのバージョン2をデプロイし、不正署名拒否・正常登録・requestId冪等性を実機確認する。（完了）
-8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。
+8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。（完了）
 9. 営業管理用Cloud RunサービスへCallback署名検証を実装する。
 10. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
 11. 署名不一致と正常Callbackを確認する。

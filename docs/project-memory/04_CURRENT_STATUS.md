@@ -4,7 +4,7 @@
 
 - 更新日：2026-08-05
 - 現在のPhase：v2.0設計準備
-- 現在のStep：Apps Script内部入口の実機POST確認完了、Cloud Runテスト環境のデプロイ準備
+- 現在のStep：Cloud TasksからApps Scriptまでの実機疎通完了、LINE WORKS Callback受信の準備
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
@@ -13,7 +13,7 @@
 - 移行コミットのGitHub同期：完了
 - 最新ローカルコミット：`68c24ba テスト用Webアプリのデプロイ結果を記録`
 - 最新ローカルコミットのGitHub同期：完了
-- 現在の作業ツリー：Apps Script内部署名のUTF-8補正と実機検証結果を記録中。既存本番Apps Scriptコードの変更なし。
+- 現在の作業ツリー：Cloud RunデプロイとCloud Tasks実機疎通結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口を作成済み。内部入口はバージョン2で実機検証完了。Cloud Runタスク処理はローカル骨格・自動テスト完了。Bot、LINE WORKS用Secret、Cloud Runサービスは未作成。
+- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口、非公開Cloud Runサービスを作成済み。Cloud TasksからApps Script・テスト用Sheetsまでの実機疎通完了。Bot、LINE WORKS用Secret、Callback受信は未作成。
 
 ## 7. 実施済みの確認
 
@@ -117,6 +117,10 @@ LINE WORKS
 - Cloud Runタスク処理にApps Script結果をHTTP 200/503へ変換するローカル骨格を追加した。
 - Apps Script 6ケース、Cloud Run 4ケースの自動テストがすべて成功した。
 - ルートの本番用claspから`lineworks/`を除外し、既存本番Apps Scriptの送信対象が変わらないことを`clasp status`で確認した。
+- 営業管理専用ビルドアカウント`sales-lineworks-build`を作成し、`roles/run.builder`だけを付与した。
+- 非公開Cloud Runサービス`sales-lineworks-webhook-test`を専用実行アカウントでデプロイした。初回リビジョンは`sales-lineworks-webhook-test-00001-jsm`。
+- 未認証アクセスではサービス内容を返さず、専用実行アカウントだけに`roles/run.invoker`を付与した。
+- Cloud TasksからOIDC付きで`/tasks/process`を呼び、HTTP 200、Apps Scriptで`ALREADY_PROCESSED`、同一地域情報IDの返却を確認した。これによりCloud Tasksからテスト用Sheetsまでの登録と冪等性を実機確認した。
 
 ## 9. 未着手機能
 
@@ -132,7 +136,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-営業管理専用Cloud Runサービスをテスト環境へデプロイし、Cloud Tasksから`/tasks/process`、Apps Script内部入口までの疎通を確認する。その後、テストBotとLINE WORKS Callback受信を準備する。
+営業管理専用のLINE WORKSテストBotと必要なSecretを準備し、Cloud RunへCallback署名検証とCloud Tasks登録処理を実装する。
 
 ## 11. 更新ルール
 

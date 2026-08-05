@@ -1,6 +1,6 @@
 # LINE WORKS Webhook初期検証手順
 
-状態：ローカル自動テスト、テスト用Apps Scriptへのコード・専用内部Secret反映、Webアプリのバージョン2デプロイまで完了。Apps Script内部入口は実機POSTで確認済み。Cloud Run・Cloud Tasks間の実機疎通は未実施。
+状態：ローカル自動テスト、Apps Script内部入口、非公開Cloud Runサービスのデプロイまで完了。Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性を確認済み。LINE WORKS Callbackは未実施。
 
 ## 1. 対象
 
@@ -69,6 +69,13 @@ node --test lineworks/cloud-run/test/task-result.test.js
 キューの最大配信速度と同時配信数を、Apps ScriptとSheetsの安全な範囲へ制限する。
 
 Cloud Tasksの送信先はApps ScriptではなくCloud Run`/tasks/process`とする。Cloud Run IAM/OIDCで認証し、Apps ScriptのJSON結果が`retryable: true`の場合だけHTTP 503を返す。
+
+2026-08-05実機結果：
+
+- Cloud Tasksから専用実行アカウントのOIDC付きで`/tasks/process`を呼び出した。
+- Cloud RunはHTTP 200を返し、タスクは処理完了後にキューから削除された。
+- 同じrequestIdをApps Scriptへ再送すると`ALREADY_PROCESSED`と同一地域情報IDが返り、最初のタスクで登録済みかつ二重登録されないことを確認した。
+- Cloud Runのエラーログは発生していない。
 
 ## 6. Apps Script内部入口
 

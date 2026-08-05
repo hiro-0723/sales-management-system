@@ -27,12 +27,14 @@
 - Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性確認完了
 - 営業管理専用テストBot（Bot ID `12871416`）と専用Bot Secretの準備完了
 - 公開Callbackと非公開Cloud Tasksワーカーを別Cloud Runサービスへ分離する安全補正を確定
+- 公開Callbackサービスの署名検証、入力制限、Cloud Tasks登録を実装・デプロイ完了
+- 不正署名、正常署名、同一イベント再送、OIDC付き非公開ワーカー配送の模擬実機確認完了
 - 地域情報共有の1対1トーク検証準備
 
 ## 今後予定
 
-1. 公開Callback専用Cloud Runサービスへ署名検証とCloud Tasks登録処理を実装する。
-2. 不正署名・Bot ID不一致・正常Callbackを確認後、テストBotのCallback URLを有効化する。
+1. テストBotへ公開Callback URLを設定し、テキストイベントだけを有効化する。
+2. テスト利用者を限定してLINE WORKS実機Callbackを確認する。
 3. Googleフォームを残したまま、Webhook受付、署名検証、非同期配送、Apps Script内部入口の最小経路を実装する。
 4. テスト環境で営業予定登録、営業報告、地域情報共有を順番に検証する。
 5. 並行運用、切替条件、復元方法を確定してv2.0へ移行する。

@@ -1,6 +1,6 @@
 # LINE WORKS Webhook初期検証手順
 
-状態：ローカル自動テスト、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secretの準備まで完了。Cloud TasksからApps Scriptまでの実機疎通と冪等性を確認済み。公開LINE WORKS Callbackは未実施。
+状態：ローカル自動テスト、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secret、公開Callbackサービスまで準備完了。模擬署名付きCallbackから非公開ワーカーまで実機確認済み。LINE WORKSからの実機Callbackは未実施。
 
 ## 1. 対象
 
@@ -49,6 +49,14 @@ node --test lineworks/cloud-run/test/task-result.test.js
 | 未対応イベント | データ登録せず、安全な応答 |
 
 秘密値とメッセージ本文全体をログへ出さない。
+
+2026-08-05模擬実機結果：
+
+- 不正署名：HTTP 401、`SIGNATURE_MISMATCH`
+- 正常署名：HTTP 200、`ACCEPTED`
+- 同一本文再送：HTTP 200、Cloud Tasksの同一タスク名として二重配送なし
+- 非公開ワーカー：OIDC付き`/tasks/callback`でHTTP 200
+- 現行リビジョンのエラーなし、保留タスク0
 
 ## 4. Callback応答
 

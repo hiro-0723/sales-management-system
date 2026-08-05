@@ -4,7 +4,7 @@
 
 - 更新日：2026-08-05
 - 現在のPhase：v2.0設計準備
-- 現在のStep：営業管理専用テストBot・Secret準備完了、公開Callback受信サービスの実装準備
+- 現在のStep：公開Callback受信サービスの実装・模擬実機確認完了、LINE WORKS実機Callback有効化前
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
@@ -13,7 +13,7 @@
 - 移行コミットのGitHub同期：完了
 - 最新ローカルコミット：`68c24ba テスト用Webアプリのデプロイ結果を記録`
 - 最新ローカルコミットのGitHub同期：完了
-- 現在の作業ツリー：Cloud RunデプロイとCloud Tasks実機疎通結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
+- 現在の作業ツリー：公開Callback署名検証コードとデプロイ結果を記録中。既存本番Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secretを作成済み。Cloud TasksからApps Script・テスト用Sheetsまでの実機疎通完了。公開Callback受信は未実装。
+- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secret、公開Callbackサービスを作成済み。署名付き模擬Callbackから非公開ワーカーまで実機確認完了。LINE WORKS側Callbackは無効のまま。
 
 ## 7. 実施済みの確認
 
@@ -124,6 +124,9 @@ LINE WORKS
 - LINE WORKSテナント`smile-riha`に営業管理専用テストBot（Bot ID `12871416`）をCallback無効・1対1限定・準備中で作成した。
 - 専用Secret`sales-lineworks-bot-secret-test`を作成し、正しいBot SecretをVersion 2へ保存した。誤入力だったVersion 1は無効化し、専用実行アカウントだけへ参照権限を付与した。値はGit・ログ・Project Memoryへ保存していない。
 - Cloud Runはサービス単位で公開範囲が決まるため、公開Callbackと非公開`/tasks/process`を別サービスへ分離する方針へ補正した。現在の`sales-lineworks-webhook-test`は名前を維持したまま非公開ワーカーとして扱う。
+- 公開`sales-lineworks-callback-test`へBot ID確認、HMAC-SHA256署名検証、発行時刻、利用者ID、テキスト長、イベント種別制限、Cloud Tasks登録を実装した。
+- 公開Callbackの不正署名はHTTP 401、正常署名と同一イベント再送はHTTP 200となり、非公開ワーカー`/tasks/callback`へOIDC付きで1件配送されることを確認した。営業データ登録は行わない受信確認段階。
+- 非公開ワーカーはリビジョン`sales-lineworks-webhook-test-00002-l76`、公開Callbackは`sales-lineworks-callback-test-00003-n7l`が100%配信中。初回Callbackリビジョンの設定不足は修正済みでトラフィックなし。
 
 ## 9. 未着手機能
 
@@ -139,7 +142,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-公開Callback専用Cloud Runサービス`sales-lineworks-callback-test`へ、Bot ID確認、署名検証、入力制限、Cloud Tasks登録、早期HTTP 200応答を実装する。署名検証前にCallback URLを有効化しない。
+安定地点をGitHubへ保存後、LINE WORKSテストBotのCallback URLを公開サービスの`/callback`へ設定し、テキストイベントだけを有効化する。その後、テスト利用者を限定して実機Callbackを確認する。
 
 ## 11. 更新ルール
 

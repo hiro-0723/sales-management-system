@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
 更新日：2026-08-05
-状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Script、非公開Cloud Runワーカー、営業管理専用テストBot・Secretを作成済み。Cloud TasksからApps Scriptまでの実機疎通と冪等性を確認済み。公開Callback受信は未実装。
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Script、非公開Cloud Runワーカー、営業管理専用テストBot・Secret、公開Callbackサービスを作成済み。模擬署名付きCallbackから非公開ワーカーまで実機確認済み。LINE WORKS側Callbackは未設定。
 
 ## 1. 今回の1目的
 
@@ -218,6 +218,9 @@ Google Cloud project: lw-detail-poc-20260724
 - Cloud TasksからOIDC付きで`/tasks/process`を呼び、HTTP 200とApps Script側の同一requestId受付記録を確認した。
 - 営業管理専用テストBot（Bot ID `12871416`）をCallback無効・1対1限定・準備中で作成した。
 - `sales-lineworks-bot-secret-test`のVersion 2へBot Secretを保存し、Version 1は誤入力のため無効化した。専用実行アカウントだけに参照権限を付与した。
+- `sales-lineworks-callback-test`を公開Callback専用としてデプロイし、Bot ID、署名、発行時刻、利用者ID、テキスト長、イベント種別を検証してからCloud Tasksへ登録する。
+- `sales-lineworks-webhook-test`へ受信確認用`/tasks/callback`を追加し、公開サービスからOIDC付きで配送する。会話フロー実装前のため、この経路では営業データを登録しない。
+- 模擬実機確認で不正署名HTTP 401、正常署名HTTP 200、同一本文のタスク重複防止、非公開ワーカーHTTP 200、保留タスク0を確認した。
 - Google Driveに営業管理v2専用テストフォルダを作成した。
 - 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのバージョン2を実行者「自分」、アクセス「全員」でデプロイ済み。トリガーは未設定。
@@ -290,9 +293,9 @@ Bot：「地域情報ID REG-... で登録しました」
 7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
 7.1 Apps Script Webアプリのバージョン2をデプロイし、不正署名拒否・正常登録・requestId冪等性を実機確認する。（完了）
 8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。（完了）
-9. 公開Callback専用Cloud RunサービスへCallback署名検証を実装する。
+9. 公開Callback専用Cloud RunサービスへCallback署名検証を実装する。（完了）
 10. LINE WORKSテスト用Botを作成する。（Callback無効で完了。署名検証後にCallback URLを設定）
-11. 署名不一致と正常Callbackを確認する。
+11. 模擬リクエストで署名不一致と正常Callbackを確認する。（完了。LINE WORKS実機は未実施）
 12. 地域情報共有の会話状態を追加する。
 13. Googleフォームと既存処理の回帰確認を行う。
 

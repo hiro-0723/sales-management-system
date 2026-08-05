@@ -1,6 +1,6 @@
 # LINE WORKS Webhook初期検証手順
 
-状態：ローカル自動テスト、テスト用Apps Scriptへのコード・専用内部Secret反映、Webアプリのバージョン1デプロイまで完了。署名なし・正常署名POSTとCloud Run間の実機疎通は未実施。
+状態：ローカル自動テスト、テスト用Apps Scriptへのコード・専用内部Secret反映、Webアプリのバージョン2デプロイまで完了。Apps Script内部入口は実機POSTで確認済み。Cloud Run・Cloud Tasks間の実機疎通は未実施。
 
 ## 1. 対象
 
@@ -81,6 +81,13 @@ Cloud Tasksの送信先はApps ScriptではなくCloud Run`/tasks/process`とす
 | 未登録利用者 | データを変更しない |
 | 必須不足 | データを変更しない |
 | 文字数超過 | データを変更しない |
+
+2026-08-05実機結果：
+
+- 不正署名：`SIGNATURE_MISMATCH`で拒否
+- 正常署名：`REGISTERED`、地域情報IDを1件発行
+- 同一requestId再送：`ALREADY_PROCESSED`、同じ地域情報IDを返却
+- 日本語を含む署名対象は、送信側・Apps Script側ともUTF-8を明示
 
 ## 7. 地域情報共有
 

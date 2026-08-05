@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
-更新日：2026-07-30
-状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口、専用内部Secret、Webアプリのバージョン1まで反映済み。Cloud Runタスク処理はローカル実装・自動テスト済み。Bot・LINE WORKS用Secret・Cloud Runデプロイ・Webアプリへの実機POSTは未実施。
+更新日：2026-08-05
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Scriptを作成済み。内部入口、専用内部Secret、Webアプリのバージョン2を反映し、実機POSTで署名拒否・登録・冪等性を確認済み。Cloud Runタスク処理はローカル実装・自動テスト済み。Bot・LINE WORKS用Secret・Cloud Runデプロイは未実施。
 
 ## 1. 今回の1目的
 
@@ -131,7 +131,7 @@ Apps Script Webアプリでは任意のHTTPヘッダー取得に依存しない�
 }
 ```
 
-署名対象は、`signature`を除いたデータを安定した順序で文字列化した値とする。より単純に、署名前の本文文字列を固定形式で生成し、その文字列へ署名して送る方式も検討する。
+署名対象は、`signature`を除いたデータをキー順で安定化して文字列化した値とし、HMAC-SHA256の入力文字コードは送信側・Apps Script側ともUTF-8を明示する。
 
 Apps Script側では次をすべて満たす場合だけ処理する。
 
@@ -213,9 +213,9 @@ Google Cloud project: lw-detail-poc-20260724
 - `sales-lineworks-events-test`を作成した。最大2件/秒、同時2件、最大5回、最大10分の有限再試行とする。
 - Google Driveに営業管理v2専用テストフォルダを作成した。
 - 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
-- テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのバージョン1を実行者「自分」、アクセス「全員」でデプロイ済み。トリガーは未設定。
+- テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのバージョン2を実行者「自分」、アクセス「全員」でデプロイ済み。トリガーは未設定。
 - WebアプリURLは`https://script.google.com/macros/s/AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw/exec`。
-- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 1を作成し、営業管理専用実行アカウントだけへ参照権限を付与した。
+- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 2をApps Scriptと同期し、営業管理専用実行アカウントだけへ参照権限を付与した。
 - テスト用Apps ScriptのScript Property`SALES_LINEWORKS_INTERNAL_SECRET`へ同じ値を登録した。Secret値はログ・Git・Sheetsへ保存していない。
 - 本番「営業管理マスター」は対象確認だけを行い、複製・変更していない。
 - 既存Cloud Runサービスは外部呼び出し可能だが、営業管理用Callbackには使わない。
@@ -281,7 +281,7 @@ Bot：「地域情報ID REG-... で登録しました」
 5. Apps Scriptテスト用プロジェクトを準備する。（完了）
 6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（自動テスト・テスト用プロジェクトへの反映完了）
 7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
-7.1 Apps Script Webアプリのバージョン1をデプロイする。（完了）
+7.1 Apps Script Webアプリのバージョン2をデプロイし、不正署名拒否・正常登録・requestId冪等性を実機確認する。（完了）
 8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。
 9. 営業管理用Cloud RunサービスへCallback署名検証を実装する。
 10. LINE WORKSテスト用Botを作成し、Callback URLを設定する。

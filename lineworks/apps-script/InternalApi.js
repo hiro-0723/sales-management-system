@@ -177,7 +177,11 @@ function createSalesLineWorksAppsScriptDependencies_() {
         .getProperty(SALES_LINEWORKS_INTERNAL_SECRET_PROPERTY);
     },
     computeHmacBase64: function(value, secret) {
-      const bytes = Utilities.computeHmacSha256Signature(value, secret);
+      const bytes = Utilities.computeHmacSha256Signature(
+        value,
+        secret,
+        Utilities.Charset.UTF_8
+      );
       return Utilities.base64Encode(bytes);
     },
     acquireLock: function() {

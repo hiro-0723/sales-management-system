@@ -2,18 +2,18 @@
 
 ## 1. 基本状態
 
-- 更新日：2026-07-30
+- 更新日：2026-08-05
 - 現在のPhase：v2.0設計準備
-- 現在のStep：テスト用Apps Script Webアプリのバージョン1をデプロイ完了、実機POST確認前
+- 現在のStep：Apps Script内部入口の実機POST確認完了、Cloud Runテスト環境のデプロイ準備
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
 - ベースライン時点の作業ツリー：クリーン
 - 新エージェントシステムv2移行コミット：`01494eef191165f14a06520ad032b7a1d74bc23a 新エージェントシステムv2へ移行`
 - 移行コミットのGitHub同期：完了
-- 最新ローカルコミット：`cd20e00 テスト用Apps Scriptへの内部接続反映を記録`
-- 最新ローカルコミットのGitHub同期：実行環境のDNS制限により未完了
-- 現在の作業ツリー：Webアプリデプロイ結果を文書へ記録中。既存本番Apps Scriptコードの変更なし。
+- 最新ローカルコミット：`68c24ba テスト用Webアプリのデプロイ結果を記録`
+- 最新ローカルコミットのGitHub同期：完了
+- 現在の作業ツリー：Apps Script内部署名のUTF-8補正と実機検証結果を記録中。既存本番Apps Scriptコードの変更なし。
 
 ## 2. 完了済み
 
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：Google Cloud基盤、テストSheets、Apps Script作成済み。Apps Script内部入口とCloud Runタスク処理はローカル骨格・自動テスト完了。外部反映、Bot、Secret、Cloud Runサービスは未作成。
+- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口を作成済み。内部入口はバージョン2で実機検証完了。Cloud Runタスク処理はローカル骨格・自動テスト完了。Bot、LINE WORKS用Secret、Cloud Runサービスは未作成。
 
 ## 7. 実施済みの確認
 
@@ -105,11 +105,12 @@ LINE WORKS
 - テスト用Sheetsは日本語ロケール、Asia/Tokyo、データシートの1行目固定を確認した。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、所有アカウントと接続先を確認した。
 - テスト用Apps Scriptへ`InternalApi.js`と`appsscript.json`を反映した。トリガーは未設定。
-- Webアプリのバージョン1を実行者「自分」、アクセス「全員」でデプロイした。デプロイIDは`AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw`。
+- Webアプリのバージョン2を実行者「自分」、アクセス「全員」でデプロイした。デプロイIDは`AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw`。
 - WebアプリURLは`https://script.google.com/macros/s/AKfycbwWUtVjVuLAbPb-quAd8tuHdA0AIb6UdHnUhqmUKj18zfSt7ay72xNUxm5_oNmeExkPWw/exec`。
 - デプロイ直後、テスト用Sheetsの地域情報共有2シートがヘッダー行だけで、データ行がないことを確認した。
-- 実行環境の外部DNS制限により、Webアプリへの署名なし・正常署名POSTは未実施。
-- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 1を作成し、`sales-lineworks-runtime`だけへ参照権限を付与した。
+- Webアプリへの実機POSTで、不正署名は`SIGNATURE_MISMATCH`、正常署名は`REGISTERED`、同一requestIdの再送は`ALREADY_PROCESSED`となることを確認した。
+- 日本語を含む署名対象の文字コード差異を防ぐため、Apps ScriptのHMAC計算へUTF-8を明示した。
+- 専用内部Secret`sales-apps-script-internal-secret-test`のVersion 2を作成し、`sales-lineworks-runtime`だけへ参照権限を付与した。
 - 同じ内部Secretをテスト用Apps ScriptのScript Property`SALES_LINEWORKS_INTERNAL_SECRET`へ登録した。値は画面出力・ログ・Git・Sheetsへ保存せず、作業用一時ファイルも削除した。
 - Apps Scriptが業務結果に応じたHTTPステータスを返せないため、Cloud Tasksの送信先をCloud Run`/tasks/process`へ補正した。
 - Apps Script内部入口に内部署名、期限、入力検証、requestId冪等性、処理途中復旧、地域情報登録のローカル骨格を追加した。
@@ -131,7 +132,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-デプロイ済みWebアプリへ署名なし・正常署名のPOSTを送り、拒否、地域情報登録、requestId冪等性を実機確認する。その後、Cloud RunのデプロイとBot作成へ進む。
+営業管理専用Cloud Runサービスをテスト環境へデプロイし、Cloud Tasksから`/tasks/process`、Apps Script内部入口までの疎通を確認する。その後、テストBotとLINE WORKS Callback受信を準備する。
 
 ## 11. 更新ルール
 

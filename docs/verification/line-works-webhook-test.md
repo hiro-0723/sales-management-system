@@ -1,6 +1,6 @@
 # LINE WORKS Webhook初期検証手順
 
-状態：ローカル自動テスト、Apps Script内部入口、非公開Cloud Runサービスのデプロイまで完了。Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性を確認済み。LINE WORKS Callbackは未実施。
+状態：ローカル自動テスト、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secretの準備まで完了。Cloud TasksからApps Scriptまでの実機疎通と冪等性を確認済み。公開LINE WORKS Callbackは未実施。
 
 ## 1. 対象
 
@@ -20,6 +20,7 @@
 - Callback URLを設定する前に、署名検証単体テストが成功している。
 - テスト利用者とダミーデータが決まっている。
 - 作成・更新・削除対象と復元方法について許可を得ている。
+- 公開Callbackサービスと非公開Cloud Tasksワーカーが別Cloud Runサービスである。
 
 ## 2.1 ローカル自動テスト
 

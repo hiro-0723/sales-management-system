@@ -25,13 +25,14 @@
 - Apps Script内部入口の不正署名拒否、新規登録、requestId重複防止を実機POSTで確認完了
 - 非公開Cloud Runサービスの初回デプロイ完了
 - Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性確認完了
-- 営業管理専用Bot、LINE WORKS用Secret、Cloud Runの準備
+- 営業管理専用テストBot（Bot ID `12871416`）と専用Bot Secretの準備完了
+- 公開Callbackと非公開Cloud Tasksワーカーを別Cloud Runサービスへ分離する安全補正を確定
 - 地域情報共有の1対1トーク検証準備
 
 ## 今後予定
 
-1. LINE WORKSテストBotと専用Secretを準備する。
-2. Cloud RunへCallback署名検証とCloud Tasks登録処理を実装する。
+1. 公開Callback専用Cloud Runサービスへ署名検証とCloud Tasks登録処理を実装する。
+2. 不正署名・Bot ID不一致・正常Callbackを確認後、テストBotのCallback URLを有効化する。
 3. Googleフォームを残したまま、Webhook受付、署名検証、非同期配送、Apps Script内部入口の最小経路を実装する。
 4. テスト環境で営業予定登録、営業報告、地域情報共有を順番に検証する。
 5. 並行運用、切替条件、復元方法を確定してv2.0へ移行する。

@@ -4,7 +4,7 @@
 
 - 更新日：2026-08-05
 - 現在のPhase：v2.0設計準備
-- 現在のStep：Cloud TasksからApps Scriptまでの実機疎通完了、LINE WORKS Callback受信の準備
+- 現在のStep：営業管理専用テストBot・Secret準備完了、公開Callback受信サービスの実装準備
 - 現在ブランチ：`main`
 - 移行開始ベースライン：`3e2a301bd0eddc35e7b4a755aa4b2801726ecef2 Phase8: 営業ダッシュボードVer1を追加`
 - ベースライン時点のGitHub同期：`main`と`origin/main`が一致
@@ -63,7 +63,7 @@ LINE WORKS
 - テスト環境：Google Cloud、Bot、Apps Script、Sheetsを本番と分離。
 - 成果物：`docs/design/LINE_WORKS_TECHNICAL_ARCHITECTURE.md`と`docs/verification/line-works-webhook-test.md`。
 - 変更しない範囲：既存Apps Scriptコード、Google Sheets、Google Forms、LINE WORKS設定、実データ。
-- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口、非公開Cloud Runサービスを作成済み。Cloud TasksからApps Script・テスト用Sheetsまでの実機疎通完了。Bot、LINE WORKS用Secret、Callback受信は未作成。
+- 状態：Google Cloud基盤、テストSheets、Apps Script内部入口、非公開Cloud Runワーカー、営業管理専用テストBot・Secretを作成済み。Cloud TasksからApps Script・テスト用Sheetsまでの実機疎通完了。公開Callback受信は未実装。
 
 ## 7. 実施済みの確認
 
@@ -121,6 +121,9 @@ LINE WORKS
 - 非公開Cloud Runサービス`sales-lineworks-webhook-test`を専用実行アカウントでデプロイした。初回リビジョンは`sales-lineworks-webhook-test-00001-jsm`。
 - 未認証アクセスではサービス内容を返さず、専用実行アカウントだけに`roles/run.invoker`を付与した。
 - Cloud TasksからOIDC付きで`/tasks/process`を呼び、HTTP 200、Apps Scriptで`ALREADY_PROCESSED`、同一地域情報IDの返却を確認した。これによりCloud Tasksからテスト用Sheetsまでの登録と冪等性を実機確認した。
+- LINE WORKSテナント`smile-riha`に営業管理専用テストBot（Bot ID `12871416`）をCallback無効・1対1限定・準備中で作成した。
+- 専用Secret`sales-lineworks-bot-secret-test`を作成し、正しいBot SecretをVersion 2へ保存した。誤入力だったVersion 1は無効化し、専用実行アカウントだけへ参照権限を付与した。値はGit・ログ・Project Memoryへ保存していない。
+- Cloud Runはサービス単位で公開範囲が決まるため、公開Callbackと非公開`/tasks/process`を別サービスへ分離する方針へ補正した。現在の`sales-lineworks-webhook-test`は名前を維持したまま非公開ワーカーとして扱う。
 
 ## 9. 未着手機能
 
@@ -136,7 +139,7 @@ LINE WORKS
 
 ## 10. 次のStep
 
-営業管理専用のLINE WORKSテストBotと必要なSecretを準備し、Cloud RunへCallback署名検証とCloud Tasks登録処理を実装する。
+公開Callback専用Cloud Runサービス`sales-lineworks-callback-test`へ、Bot ID確認、署名検証、入力制限、Cloud Tasks登録、早期HTTP 200応答を実装する。署名検証前にCallback URLを有効化しない。
 
 ## 11. 更新ルール
 

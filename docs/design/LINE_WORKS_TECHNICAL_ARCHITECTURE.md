@@ -1,7 +1,7 @@
 # LINE WORKS連携 技術構成
 
 更新日：2026-08-05
-状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Script、非公開Cloud Runサービスを作成済み。Cloud TasksからCloud Run、Apps Script、テスト用Sheetsまでの実機疎通と冪等性を確認済み。Bot・LINE WORKS用Secret・Callback受信は未実施。
+状態：初期構成案。Google Cloud基盤、テスト用Sheets、Apps Script、非公開Cloud Runワーカー、営業管理専用テストBot・Secretを作成済み。Cloud TasksからApps Scriptまでの実機疎通と冪等性を確認済み。公開Callback受信は未実装。
 
 ## 1. 今回の1目的
 
@@ -22,7 +22,7 @@ LINE WORKS連携の最初の検証に使用するWebhook受信層、非同期処
 ```text
 LINE WORKSテスト用Bot
   ↓ HTTPS Callback
-Cloud Run: sales-lineworks-webhook-test
+Cloud Run: sales-lineworks-callback-test（公開Callback専用）
   1. 生の本文とヘッダーを取得
   2. Bot IDを確認
   3. X-WORKS-Signatureを検証
@@ -37,7 +37,7 @@ Cloud Tasks: lineworks-events-test
   ├─ 有限回の再試行
   └─ OIDC付きで署名付きJSONをPOST
   ↓
-Cloud Run: /tasks/process
+Cloud Run: sales-lineworks-webhook-test /tasks/process（非公開ワーカー）
   1. Cloud Run IAM/OIDCで呼び出し元を認証
   2. キュー名を追加確認
   3. Apps Script内部入口へ署名付きJSONをPOST
@@ -90,11 +90,11 @@ Cloud TasksからApps Scriptへは直接送らない。Apps Script Webアプリ�
 
 - 一時失敗と恒久的な入力エラーを区別できる。
 - Cloud TasksからCloud Runへの呼び出しをIAM/OIDCで保護できる。
-- 追加のCloud Runサービスを増やさず、外部Callbackと内部タスク処理を経路で分離できる。
+- 公開Callbackと非公開ワーカーのIAM境界をサービス単位で分離できる。
 
 デメリット：
 
-- Cloud Runに`/tasks/process`の責務が増える。
+- Cloud Runサービスが2つになり、デプロイと監視対象が増える。
 - Apps ScriptのJSON応答仕様とCloud RunのHTTP変換仕様を一緒に管理する必要がある。
 
 影響範囲：
@@ -150,11 +150,11 @@ Apps Script側では次をすべて満たす場合だけ処理する。
 
 ### 外部入口
 
-営業管理用Cloud RunサービスだけをLINE WORKS Callback URLとして公開する。LINE WORKS署名の検証に失敗したリクエストはCloud Tasksへ登録しない。
+`sales-lineworks-callback-test`だけをLINE WORKS Callback URLとして公開する。LINE WORKS署名の検証に失敗したリクエストはCloud Tasksへ登録しない。
 
 ### 内部入口
 
-Cloud TasksからCloud Runの`/tasks/process`へはOIDCを付ける。Cloud Run IAMを主な認証境界とし、Cloud Tasksヘッダーだけを認証に使用しない。
+Cloud Tasksから非公開Cloud Runワーカー`sales-lineworks-webhook-test`の`/tasks/process`へはOIDCを付ける。Cloud Run IAMを主な認証境界とし、Cloud Tasksヘッダーだけを認証に使用しない。Cloud Runの公開範囲はサービス単位のため、公開Callbackと非公開ワーカーを同一サービスへ置かない。
 
 Apps Script WebアプリURLは技術上アクセス可能でも、内部署名、短い有効期限、requestIdの冪等性確認を通らない本文は処理しない。URL自体を秘密情報の代わりにしない。
 
@@ -189,7 +189,8 @@ Apps Script WebアプリURLは技術上アクセス可能でも、内部署名�
 Google Cloud project: lw-detail-poc-20260724
 ├── Cloud Run
 │   ├── lw-detail-auth（既存・変更しない）
-│   └── sales-lineworks-webhook-test（新規候補）
+│   ├── sales-lineworks-callback-test（公開Callback専用・作成予定）
+│   └── sales-lineworks-webhook-test（デプロイ済み・非公開ワーカー）
 ├── Cloud Tasks
 │   └── sales-lineworks-events-test（作成済み）
 ├── Artifact Registry
@@ -215,6 +216,8 @@ Google Cloud project: lw-detail-poc-20260724
 - `sales-lineworks-build`を作成し、Cloud Runソースビルドに必要な`roles/run.builder`だけを付与した。既定サービスアカウントへ追加権限は付与していない。
 - 非公開Cloud Runサービス`sales-lineworks-webhook-test`をデプロイし、`sales-lineworks-runtime`だけへ呼び出し権限を付与した。
 - Cloud TasksからOIDC付きで`/tasks/process`を呼び、HTTP 200とApps Script側の同一requestId受付記録を確認した。
+- 営業管理専用テストBot（Bot ID `12871416`）をCallback無効・1対1限定・準備中で作成した。
+- `sales-lineworks-bot-secret-test`のVersion 2へBot Secretを保存し、Version 1は誤入力のため無効化した。専用実行アカウントだけに参照権限を付与した。
 - Google Driveに営業管理v2専用テストフォルダを作成した。
 - 個人情報を含まない空のテスト用Sheetsを作成した。対象タブはREADME、地域情報共有（生データ）、地域情報共有。
 - テスト用Sheetsに紐付くApps Script「営業管理システム v2 LINE WORKSテスト」を作成し、内部入口コードとマニフェストを反映した。Webアプリのバージョン2を実行者「自分」、アクセス「全員」でデプロイ済み。トリガーは未設定。
@@ -280,15 +283,15 @@ Bot：「地域情報ID REG-... で登録しました」
 
 1. Google Cloudテストプロジェクトを用意する。（確認済み）
 2. Cloud Tasks API、営業管理用サービスアカウント、Cloud Tasksキューを準備する。（完了）
-3. Apps Script内部接続用Secretを準備する。（完了。LINE WORKS Bot用Secretは未準備）
+3. Apps Script内部接続用SecretとLINE WORKS Bot用Secretを準備する。（完了）
 4. 個人情報を含まないテスト用スプレッドシートを準備する。（完了）
 5. Apps Scriptテスト用プロジェクトを準備する。（完了）
 6. Apps Script内部入口を実装し、偽署名・期限切れ・重複をローカル相当で確認する。（自動テスト・テスト用プロジェクトへの反映完了）
 7. Cloud Runのタスク処理でApps Script結果をHTTP 200/503へ変換する。（ローカル骨格・自動テスト完了）
 7.1 Apps Script Webアプリのバージョン2をデプロイし、不正署名拒否・正常登録・requestId冪等性を実機確認する。（完了）
 8. Cloud TasksからCloud Runタスク処理、Apps Script内部入口への疎通を確認する。（完了）
-9. 営業管理用Cloud RunサービスへCallback署名検証を実装する。
-10. LINE WORKSテスト用Botを作成し、Callback URLを設定する。
+9. 公開Callback専用Cloud RunサービスへCallback署名検証を実装する。
+10. LINE WORKSテスト用Botを作成する。（Callback無効で完了。署名検証後にCallback URLを設定）
 11. 署名不一致と正常Callbackを確認する。
 12. 地域情報共有の会話状態を追加する。
 13. Googleフォームと既存処理の回帰確認を行う。
